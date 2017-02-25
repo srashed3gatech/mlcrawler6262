@@ -1,0 +1,5 @@
+Phishing URL feed: https://openphish.com/
+Malware DNS blacklist: http://www.malwaredomains.com/wordpress/?page_id=66
+List of malicious domain blacklists: https://isc.sans.edu/suspicious_domains.html
+Another good one: https://hosts-file.net/?s=Download
+List of different blacklists: http://www.malwaredomainlist.com/forums/index.php?topic=3270.0
