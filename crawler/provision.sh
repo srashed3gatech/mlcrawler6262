@@ -4,6 +4,9 @@
 touch ~/.bash_aliases
 touch ~/.bash_profile
 
+# Create tools dir
+mkdir ~/tools
+
 # Update Ubuntu packages
 sudo apt-get -y update
 sudo apt-get -y upgrade
@@ -71,7 +74,14 @@ echo 'export PATH="~/tools/nutch/bin/:$PATH"' >> ~/.bash_profile
 echo 'export PATH="~/tools/solr/bin/:$PATH"' >> ~/.bash_profile
 source ~/.bash_profile
 
-# Grab Hadoop container and run it
-# Source: https://hub.docker.com/r/sequenceiq/hadoop-docker/
-# docker pull sequenceiq/hadoop-docker:2.7.0
-# docker run -it sequenceiq/hadoop-docker:2.7.0 /etc/bootstrap.sh -bash
+# Clone crawler from Github
+cd ~/tools
+git clone https://github.com/srashed3gatech/mlcrawler6262.git
+
+# Install pip and install dependencies (OpenSSL, etc.)
+cd mlcrawler6262/crawler/crawler-scrapy
+sudo apt-get -y install python3-pip libffi-dev libssl-dev libxml2-dev \
+                        libxslt1-dev libjpeg8-dev zlib1g-dev
+
+# Install crawler deps
+sudo pip3 install -r requirements.txt
