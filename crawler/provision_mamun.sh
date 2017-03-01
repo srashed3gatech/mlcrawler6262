@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-BASEDIR=/media/sf_MLCrawl6262/crawler/
-
+BASEDIR=/media/sf_MLCrawler6262/crawler/
+echo $BASEDIR
 # Setup config files for user
 touch ~/.bash_aliases
 touch ~/.bash_profile
@@ -84,7 +84,7 @@ echo 'export PATH="~/tools/nutch/bin/:$PATH"' >> ~/.bash_profile
 echo 'export PATH="~/tools/solr/bin/:$PATH"' >> ~/.bash_profile
 source ~/.bash_profile
 
-
+chown -R ubuntu:ubuntu ~/tools 
 #start solr
 solr start
 
