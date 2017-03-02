@@ -85,3 +85,5 @@ sudo apt-get -y install python3-pip libffi-dev libssl-dev libxml2-dev \
 
 # Install crawler deps
 sudo pip3 install -r requirements.txt
+
+# Add Mongo install

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-BASEDIR=/media/sf_MLCrawler6262/crawler/
-echo $BASEDIR
 # Setup config files for user
 touch ~/.bash_aliases
 touch ~/.bash_profile
@@ -61,36 +59,42 @@ source /etc/environment
 mkdir -p ~/tools
 cd ~/tools
 wget http://archive.apache.org/dist/nutch/1.10/apache-nutch-1.10-bin.tar.gz
-tar xvfz apache-nutch-1.10-bin.tar.gz
-mv apache-nutch-1.10 nutch
+tar -xvfz apache-nutch-1.10-bin.tar.gz
+mv apache-nutch-1.10-bin nutch
 
 wget http://archive.apache.org/dist/lucene/solr/4.10.1/solr-4.10.1.tgz
-tar xvfz solr-4.10.1.tgz
+tar -xvfz solr-4.10.1.tgz
 mv solr-4.10.1 solr
+
+# Clone repo locally
+sudo apt-get -y install git
+cd ~/tools
+git clone https://github.com/srashed3gatech/mlcrawler6262.git
+BASEDIR=~/tools/mlcrawler6262
 
 #configure nutch-site
 mv ~/tools/nutch/conf/nutch-site.xml ~/tools/nutch/conf/nutch-site.xml.bak
-cp $BASEDIR/../resources/nutch/config/nutch-site.xml ~/tools/nutch/conf/nutch-site.xml
-cp $BASEDIR/../resources/nutch/config/regex-urlfilter.txt ~/tools/nutch/conf/regex-urlfilter.txt
+cp $BASEDIR/resources/nutch/config/nutch-site.xml ~/tools/nutch/conf/nutch-site.xml
+cp $BASEDIR/resources/nutch/config/regex-urlfilter.txt ~/tools/nutch/conf/regex-urlfilter.txt
+
 #configure seed
 mkdir -p ~/tools/nutch/conf/urls
-cp $BASEDIR/../resources/nutch/config/seed.txt ~/tools/nutch/conf/urls/seed.txt
+cp $BASEDIR/resources/nutch/config/seed.txt ~/tools/nutch/conf/urls/seed.txt
 
 #configure solr site
-cp -R $BASEDIR/../resources/solr/nutch-example ~/tools/solr/example/solr/
-## 5. Add both to PATH
+cp -R $BASEDIR/resources/solr/nutch-example ~/tools/solr/example/solr/
+
+## 5. Add Nutch and Solr to $PATH
 ### Use `sed` to append a line to end of file
 echo 'export PATH="~/tools/nutch/bin/:$PATH"' >> ~/.bash_profile
 echo 'export PATH="~/tools/solr/bin/:$PATH"' >> ~/.bash_profile
 source ~/.bash_profile
 
-chown -R ubuntu:ubuntu ~/tools 
+chown -R ubuntu:ubuntu ~/tools
+
 #start solr
 solr start
 
 #run crawling
 cd ~/tools/nutch
 bin/crawl -i -D solr.server.url=http://localhost:8983/solr/nutch-example conf/urls crawl 1
-
-
-
