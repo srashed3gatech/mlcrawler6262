@@ -67,7 +67,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 # ITEM_PIPELINES = {
-#    'alexatop.pipelines.JsonPipeline': 300,
+   'alexatop.pipelines.AlexaPipeline': 300,
 # }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

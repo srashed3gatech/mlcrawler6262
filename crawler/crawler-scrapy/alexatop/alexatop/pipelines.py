@@ -8,4 +8,8 @@
 
 class AlexaPipeline(object):
     def process_item(self, item, spider):
+        # Check blacklist if URL
         return item
+
+class SolrPipeline():
+    # TODO
