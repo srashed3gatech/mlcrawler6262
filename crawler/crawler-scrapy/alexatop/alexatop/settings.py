@@ -95,9 +95,10 @@ ITEM_PIPELINES = {
 RETRY_ENABLED = True
 RETRY_TIMES = 1
 
-# Item export (TODO)
+# Item export (TEMPORARY)
 FEED_FORMAT = 'json'
 OUTPUT_FILE = os.path.join(os.getcwd(), 'output', 'results-%(time)s.json')
+os.makedirs(os.path.join(os.getcwd(), 'output'), exist_ok=True)
 FEED_URI = 'file://' + OUTPUT_FILE
 
 # Source: http://www.danmorgan.net/random-user-agent.phps
@@ -130,4 +131,7 @@ USER_AGENTS = [
 ]
 
 # Simple logging
-LOG_FILE = 'logs/{0}.log'.format(datetime.now().strftime('%d-%m-%Y'))
+log_folder = os.path.join(os.getcwd(), 'logs')
+os.makedirs(log_folder, exist_ok=True) # Create the folder
+LOG_FILE = os.path.join(log_folder,
+                        '{0}.log'.format(datetime.now().strftime('%d-%m-%Y')))
