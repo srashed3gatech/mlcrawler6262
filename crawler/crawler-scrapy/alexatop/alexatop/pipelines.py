@@ -12,4 +12,4 @@ class AlexaPipeline(object):
         return item
 
 class SolrPipeline():
-    # TODO
+    pass
