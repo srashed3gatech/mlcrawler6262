@@ -9,7 +9,7 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 import os
-from datetime import datetime
+import time
 
 BOT_NAME = 'alexatop'
 
@@ -20,12 +20,12 @@ NEWSPIDER_MODULE = 'alexatop.spiders'
 # ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 64
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 3
+# DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -51,8 +51,8 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    # 'alexatop.middlewares.AlexaDownloaderMiddleware': 543,
-    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 543,
+    'alexatop.middlewares.UserAgentMiddleware': 543,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
 }
 
 # Enable or disable extensions
@@ -94,7 +94,7 @@ RETRY_TIMES = 1
 
 # Item export (TEMPORARY)
 FEED_FORMAT = 'json'
-OUTPUT_FILE = os.path.join(os.getcwd(), 'output', 'results-%(time)s.json')
+OUTPUT_FILE = os.path.join(os.getcwd(), 'output', 'results-{0}.json'.format(time.strftime('%d-%m-%y-%H%M%S')))
 os.makedirs(os.path.join(os.getcwd(), 'output'), exist_ok=True)
 FEED_URI = 'file://' + OUTPUT_FILE
 
@@ -131,4 +131,4 @@ USER_AGENTS = [
 log_folder = os.path.join(os.getcwd(), 'logs')
 os.makedirs(log_folder, exist_ok=True) # Create the folder
 LOG_FILE = os.path.join(log_folder,
-                        '{0}.log'.format(datetime.now().strftime('%d-%m-%Y')))
+                        '{0}.log'.format(time.strftime('%d-%m-%y-%H%M%S')))
