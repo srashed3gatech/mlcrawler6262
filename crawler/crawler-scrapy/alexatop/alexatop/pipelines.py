@@ -12,5 +12,7 @@ class AlexaPipeline(object):
         # Check blacklist if URL
         return item
 
-class SolrPipeline():
-    pass
+class SolrPipeline(object):
+    def process_item(self, item, spider):
+        solr = pysolr.Solr('http://localhost:8983/solr/', timeout=10)
+        solr.add([**item])

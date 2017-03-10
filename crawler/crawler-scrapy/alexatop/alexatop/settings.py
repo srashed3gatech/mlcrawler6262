@@ -31,7 +31,7 @@ CONCURRENT_REQUESTS = 64
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
@@ -64,7 +64,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'alexatop.pipelines.AlexaPipeline': 300,
+    # 'alexatop.pipelines.AlexaPipeline': 300,
+    'alexatop.pipelines.SolrPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
