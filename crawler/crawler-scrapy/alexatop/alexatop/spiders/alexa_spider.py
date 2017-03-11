@@ -2,6 +2,8 @@ from ..items import AlexaItem
 from ..util import *
 
 import scrapy
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError, TimeoutError
 
 import random
 import time
@@ -21,8 +23,22 @@ class AlexaSpider(scrapy.Spider):
         urls = [v for v in list(grab_alexa(CRAWL_NUM).values())]
 
         for url in urls:
-            # self.user_agent = random.choice(self.settings['USER_AGENTS'])
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, callback=self.parse,
+                                 errback=self.req_error)
+
+    def req_error(self, failure):
+        # http://stackoverflow.com/questions/31146046/how-do-i-catch-errors-with-scrapy-so-i-can-do-something-when-i-get-user-timeout
+        if failure.check(HttpError):
+            response = failure.value.response
+            self.logger.error('HttpError for {}'.format(response.url))
+        elif failure.check(DNSLookupError):
+            request = failure.request
+            self.logger.error('DNSLookupError for {}'.format(request.url))
+        elif failure.check(TimeoutError):
+            request = failure.request
+            self.logger.error('TimeoutError for {}'.format(request.url))
+        else:
+            self.logger.error(repr(failure))
 
     def parse(self, response):
         '''

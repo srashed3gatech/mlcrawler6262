@@ -7,6 +7,8 @@
 
 import pysolr
 
+SOLR_CORE_URL = 'http://localhost:8983/solr/crawler/'
+
 class AlexaPipeline(object):
     def process_item(self, item, spider):
         # Check blacklist if URL
@@ -14,7 +16,7 @@ class AlexaPipeline(object):
 
 class SolrPipeline(object):
     def process_item(self, item, spider):
-        solr = pysolr.Solr('http://localhost:8983/solr/crawler/', timeout=10)
+        solr = pysolr.Solr(SOLR_CORE_URL, timeout=10)
         d = dict(item)
         d['id'] = d['pk'] # Solr requires an id parameter
         solr.add([d])
