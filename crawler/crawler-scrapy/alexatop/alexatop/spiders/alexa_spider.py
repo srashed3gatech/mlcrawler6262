@@ -11,13 +11,14 @@ import time
 # 3. Parse the csv and extract the URLs
 # 4. Start crawling
 
+# Number of Alexa sites to crawl
+CRAWL_NUM = 10000
+
 class AlexaSpider(scrapy.Spider):
     name = 'alexa'
 
     def start_requests(self):
-        urls = [v for v in list(grab_alexa().values())]
-
-        self.logger.info('HEY')
+        urls = [v for v in list(grab_alexa(CRAWL_NUM).values())]
 
         for url in urls:
             # self.user_agent = random.choice(self.settings['USER_AGENTS'])
