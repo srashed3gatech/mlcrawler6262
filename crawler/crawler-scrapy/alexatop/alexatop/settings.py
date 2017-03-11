@@ -16,11 +16,21 @@ BOT_NAME = 'alexatop'
 SPIDER_MODULES = ['alexatop.spiders']
 NEWSPIDER_MODULE = 'alexatop.spiders'
 
+# Simple logging
+LOG_ENABLED = True
+LOG_LEVEL = 'ERROR'
+LOG_SHORT_NAMES = True
+log_folder = os.path.join(os.getcwd(), 'logs')
+os.makedirs(log_folder, exist_ok=True) # Create the folder
+LOG_FILE = os.path.join(log_folder,
+                        '{0}.log'.format(time.strftime('%d-%m-%y-%H%M%S')))
+
 # Obey robots.txt rules
 # ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 128
+REACTOR_THREADPOOL_MAXSIZE = 50
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -94,10 +104,10 @@ RETRY_ENABLED = True
 RETRY_TIMES = 1
 
 # Item export (TEMPORARY)
-FEED_FORMAT = 'json'
-OUTPUT_FILE = os.path.join(os.getcwd(), 'output', 'results-{0}.json'.format(time.strftime('%d-%m-%y-%H%M%S')))
-os.makedirs(os.path.join(os.getcwd(), 'output'), exist_ok=True)
-FEED_URI = 'file://' + OUTPUT_FILE
+# FEED_FORMAT = 'json'
+# OUTPUT_FILE = os.path.join(os.getcwd(), 'output', 'results-{0}.json'.format(time.strftime('%d-%m-%y-%H%M%S')))
+# os.makedirs(os.path.join(os.getcwd(), 'output'), exist_ok=True)
+# FEED_URI = 'file://' + OUTPUT_FILE
 
 # Source: http://www.danmorgan.net/random-user-agent.phps
 USER_AGENTS = [
@@ -127,9 +137,3 @@ USER_AGENTS = [
     "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)",
     "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/5.0)",
 ]
-
-# Simple logging
-log_folder = os.path.join(os.getcwd(), 'logs')
-os.makedirs(log_folder, exist_ok=True) # Create the folder
-LOG_FILE = os.path.join(log_folder,
-                        '{0}.log'.format(time.strftime('%d-%m-%y-%H%M%S')))
