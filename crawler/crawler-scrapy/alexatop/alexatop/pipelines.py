@@ -14,9 +14,8 @@ class AlexaPipeline(object):
 
 class SolrPipeline(object):
     def process_item(self, item, spider):
-        # TODO: setup a proper schema!
-        # solr = pysolr.Solr('http://localhost:8983/solr/', timeout=10)
-        # d = dict(item)
-        # d['id'] = d['pk'] # Solr requires an id parameter
-        # solr.add([d])
+        solr = pysolr.Solr('http://localhost:8983/solr/crawler/', timeout=10)
+        d = dict(item)
+        d['id'] = d['pk'] # Solr requires an id parameter
+        solr.add([d])
         return item
