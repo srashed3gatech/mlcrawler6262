@@ -31,4 +31,4 @@ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
 #http://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
 #source srcenv
 #http://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
-#/opt/crawler/crawler/crawler-scrapy/alexatop$ scrapy crawl alexa ; echo $! > scrapy.pid &
+#/opt/crawler/crawler/crawler-scrapy/alexatop$ nohup scrapy crawl alexa > /dev/null 2>&1 & echo $! > run.pid
