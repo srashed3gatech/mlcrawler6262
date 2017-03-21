@@ -32,3 +32,7 @@ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
 #source srcenv
 #http://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
 #/opt/crawler/crawler/crawler-scrapy/alexatop$ nohup scrapy crawl alexa > /dev/null 2>&1 & echo $! > run.pid
+
+#solr 6
+#create a new core with data driven schema
+bin/solr create_core -c crawler
