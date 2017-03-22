@@ -95,10 +95,6 @@ class BlacklistParser:
             result['source'] = 'unknown'
             result['date'] = TODAY
 
-        # Assign unique ID to each URL
-        s = result['url'] + TODAY
-        result['id'] = md5(s.encode('utf-8')).hexdigest()
-
         return result
 
 def main():
