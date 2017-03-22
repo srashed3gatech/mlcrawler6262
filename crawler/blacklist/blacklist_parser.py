@@ -23,7 +23,7 @@ BLACKLIST_SOURCES = [
     {'url': 'https://hosts-file.net/psh.txt', 'format': 'hosts', 'type': 'phish'},
     {'url': 'https://hosts-file.net/exp.txt', 'format': 'hosts', 'type': 'exploit'},
     {'url': 'https://hosts-file.net/emd.txt', 'format': 'hosts', 'type': 'malware'},
-    {'url': 'https://hosts-file.net/psh.txt', 'format': 'hosts', 'type': 'phish'},
+    {'url': 'https://hosts-file.net/fsa.txt', 'format': 'hosts', 'type': 'fraud'},
     {'url': 'http://mirror2.malwaredomains.com/files/domains.txt', 'format': 'malwaredomains', 'type': 'all'},
     {'url': 'https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt', 'format': 'url', 'type': 'all'},
 ]
@@ -99,21 +99,18 @@ class BlacklistParser:
         return result
 
 def main():
-    data = []
-
     # Grab each of the blacklists and parse them
     for source in BLACKLIST_SOURCES:
         r = requests.get(source['url'])
         lines = r.text.split('\n')
 
         b = BlacklistParser(lines, source['format'])
-        data += b.results
+
+        # Dump results into JSON file (append)
+        with open('data.json', 'w+') as f:
+            json.dump(b.results, f)
 
         print('- Completed source: {0}'.format(source['url']))
-
-    # Dump results into JSON file
-    with open('data.json', 'w') as f:
-        json.dump(data, f)
 
     print('- Results written to data.json')
 
