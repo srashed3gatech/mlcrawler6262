@@ -17,7 +17,10 @@ class AlexaPipeline(object):
 class SolrPipeline(object):
     def process_item(self, item, spider):
         solr = pysolr.Solr(SOLR_CORE_URL, timeout=10)
-        d = dict(item)
-        d['id'] = d['pk'] # Solr requires an id parameter
-        solr.add([d])
+        itmDict = dict(item)
+        itmDict['id'] = itmDict['pk']
+        if(len(itmDict.keys()) == 3): #update only
+            solr.add([itmDict], fieldUpdates={'js_urls':'add'})
+        else:
+            solr.add([itmDict])
         return item
