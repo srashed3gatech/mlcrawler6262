@@ -102,7 +102,7 @@ def main():
     data = []
 
     # Grab each of the blacklists and parse them
-    for source in BLACKLIST_SOURCES[:1]:
+    for source in BLACKLIST_SOURCES:
         r = requests.get(source['url'])
         lines = r.text.split('\n')
 
