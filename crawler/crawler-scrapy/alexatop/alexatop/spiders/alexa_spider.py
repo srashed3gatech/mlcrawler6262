@@ -7,6 +7,7 @@ from twisted.internet.error import DNSLookupError, TimeoutError
 
 import random
 import time
+import datetime
 
 # 1. Grab Alex top 1M list from source
 # 2. Extract archive
@@ -14,7 +15,7 @@ import time
 # 4. Start crawling
 
 # Number of Alexa sites to crawl
-CRAWL_NUM = 500000
+CRAWL_NUM = 250000
 
 class AlexaSpider(scrapy.Spider):
     name = 'alexa'
@@ -60,7 +61,7 @@ class AlexaSpider(scrapy.Spider):
         # Compute a "unique" primary key for Solr indexing
         url = response.url
         timestamp = time.time()
-        pk = compute_md5('{0}{1}'.format(url, timestamp))
+        pk = compute_md5('{0}{1}'.format(url, datetime.date.today()))
 
         # Compute MD5 hashes of page sections
         full = response.xpath('/html').extract_first()
@@ -78,7 +79,7 @@ class AlexaSpider(scrapy.Spider):
 
         # Extract JS links
         # TODO: crawl the linked JS and hash it?
-        js_urls = response.xpath('//script/@src').extract()
+        js_urls = [{"numberOfJS":len(response.xpath('//script/@src').extract())}]
 
         # Extract other info from page
         title = response.xpath('/html/head/title/text()').extract_first()
@@ -100,4 +101,14 @@ class AlexaSpider(scrapy.Spider):
             latency=latency,
         )
 
-        return item
+        if len(response.xpath('//script/@src')) > 0:
+            for jsurl in response.xpath('//script/@src').extract():
+                request = scrapy.Request(response.urljoin(jsurl), callback=self.jsParser)
+                request.meta['item'] = {'js_urls':item['js_urls'], 'pk':item['pk']}
+                yield request
+        yield item;
+
+    def jsParser(self, response):
+        item = response.meta['item']
+        item['js_urls'] = {response.url:response.body}
+        yield item
