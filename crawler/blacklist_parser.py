@@ -4,6 +4,8 @@ from datetime import datetime
 import pysolr
 import requests
 
+SOLR_BLACKLIST_CORE = 'http://localhost:8983/solr/blacklist'
+
 '''
     Formats:
         - hosts: HOSTS file format (127.0.0.1 -> URL)
@@ -13,9 +15,9 @@ import requests
 FORMATS = ['hosts', 'malwaredomains', 'url']
 
 REGEXES = {
-    'hosts': re.compile(r'\S+\s+(\S+)'),
-    'malwaredomains': re.compile(r'(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'),
-    'url': re.compile(r'(\S+)')
+    'hosts': re.compile(r'^\S+\s+(\S+)$'),
+    'malwaredomains': re.compile(r'^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$'),
+    'url': re.compile(r'^(\S+)$')
 }
 
 BLACKLIST_SOURCES = [
@@ -27,7 +29,12 @@ BLACKLIST_SOURCES = [
     {'url': 'https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt', 'format': 'url', 'type': 'all'},
 ]
 
-TODAY = datetime.strftime(datetime.now(), '%Y%M%d')
+SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
+def format_date(dt, fmt=SOLR_DATE_FORMAT):
+    return datetime.strftime(dt, fmt)
+
+TODAY = format_date(datetime.now())
 
 class BlacklistParser:
     '''
@@ -56,7 +63,8 @@ class BlacklistParser:
         try:
             # Compute regex on line based on format
             p = REGEXES[self.format]
-            groups = re.findall(p, line)[0]
+            cleaned = line.replace('\t', ' ').rstrip()
+            groups = re.findall(p, cleaned)[0]
         except:
             return None
 
@@ -67,15 +75,18 @@ class BlacklistParser:
         result = {}
 
         # Extract fields from regex output
-        if self.format == 'host':
-            result['url'] = groups[0].strip()
+        if self.format == 'hosts':
+            result['url'] = groups.strip()
         elif self.format == 'malwaredomains':
             result['url'] = groups[0].strip()
             result['type'] = groups[1].strip()
             result['source'] = groups[2].strip()
-            result['date'] = groups[3].strip()
+
+            # Convert date to Python datetime, then re-format for Solr
+            dt = datetime.strptime(groups[3].strip(), '%Y%M%d')
+            result['date'] = format_date(dt)
         elif self.format == 'url':
-            result['url'] = groups[0].strip()
+            result['url'] = groups.strip()
 
         if self.format != 'malwaredomains':
             result['type'] = 'all'
@@ -85,18 +96,24 @@ class BlacklistParser:
         return result
 
 def main():
-    urls = []
+    data = []
 
     # Grab each of the blacklists and parse them
-    for source in BLACKLIST_SOURCES:
+    for source in BLACKLIST_SOURCES[1:2]:
         r = requests.get(source['url'])
         lines = r.text.split('\n')
 
         b = BlacklistParser(lines, source['format'])
-        urls += b.results
+        data += b.results
 
     # Store everything in a Solr collection
-    
+    solr = pysolr.Solr(SOLR_BLACKLIST_CORE, timeout=10)
+
+    for i, entry in enumerate(data[:10]):
+        print(entry)
+        entry['id'] = i
+        solr.add([entry])
+        print(i)
 
 if __name__ == '__main__':
     main()
