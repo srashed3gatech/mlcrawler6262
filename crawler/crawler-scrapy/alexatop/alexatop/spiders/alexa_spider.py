@@ -14,7 +14,7 @@ import time
 # 4. Start crawling
 
 # Number of Alexa sites to crawl
-CRAWL_NUM = 10000
+CRAWL_NUM = 500000
 
 class AlexaSpider(scrapy.Spider):
     name = 'alexa'
