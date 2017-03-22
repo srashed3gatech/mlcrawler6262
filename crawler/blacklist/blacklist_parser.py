@@ -1,10 +1,9 @@
 import re
+import json
+from hashlib import md5
 from datetime import datetime
 
-import pysolr
 import requests
-
-SOLR_BLACKLIST_CORE = 'http://localhost:8983/solr/blacklist'
 
 '''
     Formats:
@@ -93,26 +92,26 @@ class BlacklistParser:
             result['source'] = 'unknown'
             result['date'] = TODAY
 
+        # Assign unique ID to each URL
+        s = result['url'] + TODAY
+        result['id'] = md5(s.encode('utf-8')).hexdigest()
+
         return result
 
 def main():
     data = []
 
     # Grab each of the blacklists and parse them
-    for source in BLACKLIST_SOURCES:
+    for source in BLACKLIST_SOURCES[:1]:
         r = requests.get(source['url'])
         lines = r.text.split('\n')
 
         b = BlacklistParser(lines, source['format'])
         data += b.results
 
-    # Store everything in a Solr collection
-    solr = pysolr.Solr(SOLR_BLACKLIST_CORE, timeout=10)
-
-    for i, entry in enumerate(data):
-        entry['id'] = i
-
-    solr.add(data)
+    # Dump results into JSON file
+    with open('data.json', 'w') as f:
+        json.dump(data, f)
 
 if __name__ == '__main__':
     main()

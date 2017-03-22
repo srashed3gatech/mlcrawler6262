@@ -26,10 +26,8 @@ mv solr-6.4.2 solr
 
 ## 4. Setup a symlink in bin directory
 mkdir bin
-ln -s solr/bin/solr bin/solr
-
-## 5. Start Solr server on port 8983
-bin/solr start
+ln -s $HOME/solr/bin/solr bin/solr
+ln -s $HOME/solr/bin/post bin/post
 
 # Clone GH repo locally
 cd $HOME
