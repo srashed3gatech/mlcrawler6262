@@ -109,9 +109,13 @@ def main():
         b = BlacklistParser(lines, source['format'])
         data += b.results
 
+        print('- Completed source: {0}'.format(source['url']))
+
     # Dump results into JSON file
     with open('data.json', 'w') as f:
         json.dump(data, f)
+
+    print('- Results written to data.json')
 
 if __name__ == '__main__':
     main()
