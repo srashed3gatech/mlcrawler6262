@@ -99,7 +99,7 @@ def main():
     data = []
 
     # Grab each of the blacklists and parse them
-    for source in BLACKLIST_SOURCES[1:2]:
+    for source in BLACKLIST_SOURCES:
         r = requests.get(source['url'])
         lines = r.text.split('\n')
 
@@ -109,11 +109,10 @@ def main():
     # Store everything in a Solr collection
     solr = pysolr.Solr(SOLR_BLACKLIST_CORE, timeout=10)
 
-    for i, entry in enumerate(data[:10]):
-        print(entry)
+    for i, entry in enumerate(data):
         entry['id'] = i
-        solr.add([entry])
-        print(i)
+
+    solr.add(data)
 
 if __name__ == '__main__':
     main()
