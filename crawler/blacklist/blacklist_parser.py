@@ -1,4 +1,5 @@
 import re
+import os
 import json
 from hashlib import md5
 from datetime import datetime
@@ -34,6 +35,8 @@ def format_date(dt, fmt=SOLR_DATE_FORMAT):
     return datetime.strftime(dt, fmt)
 
 TODAY = format_date(datetime.now())
+
+OUTPUT_FILE = 'data.json'
 
 class BlacklistParser:
     '''
@@ -99,6 +102,12 @@ class BlacklistParser:
         return result
 
 def main():
+    # Remove existing data.json
+    try:
+        os.remove(OUTPUT_FILE)
+    except OSError:
+        pass
+
     # Grab each of the blacklists and parse them
     for source in BLACKLIST_SOURCES:
         r = requests.get(source['url'])
@@ -107,7 +116,7 @@ def main():
         b = BlacklistParser(lines, source['format'])
 
         # Dump results into JSON file (append)
-        with open('data.json', 'w+') as f:
+        with open(OUTPUT_FILE, 'a') as f:
             json.dump(b.results, f)
 
         print('- Completed source: {0}'.format(source['url']))
