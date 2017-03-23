@@ -15,17 +15,21 @@ import datetime
 # 4. Start crawling
 
 # Number of Alexa sites to crawl
-CRAWL_NUM = 250000
+CRAWL_NUM = 5000
+
+TODAY = datetime.datetime.today()
 
 class AlexaSpider(scrapy.Spider):
     name = 'alexa'
 
     def start_requests(self):
-        urls = [v for v in list(grab_alexa(CRAWL_NUM).values())]
+        urls = [v for v in grab_alexa(CRAWL_NUM)]
 
-        for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse,
+        for i, url in enumerate(urls):
+            req = scrapy.Request(url=url, callback=self.parse,
                                  errback=self.req_error)
+            req.meta['rank'] = i+1
+            yield req
 
     def req_error(self, failure):
         # http://stackoverflow.com/questions/31146046/how-do-i-catch-errors-with-scrapy-so-i-can-do-something-when-i-get-user-timeout
@@ -58,10 +62,11 @@ class AlexaSpider(scrapy.Spider):
             - Ad providers + provider IDs (revenue stream)
             - Google Analytics ID
         '''
-        # Compute a "unique" primary key for Solr indexing
         url = response.url
-        timestamp = time.time()
-        pk = compute_md5('{0}{1}'.format(url, datetime.date.today()))
+        rank = response.meta['rank']
+
+        # Compute a "unique" primary key for Solr indexing
+        pk = compute_md5('{0}{1}'.format(url, TODAY))
 
         # Compute MD5 hashes of page sections
         full = response.xpath('/html').extract_first()
@@ -78,8 +83,7 @@ class AlexaSpider(scrapy.Spider):
         urls_hash = compute_md5(''.join(urls))
 
         # Extract JS links
-        # TODO: crawl the linked JS and hash it?
-        js_urls = [{"numberOfJS":len(response.xpath('//script/@src').extract())}]
+        js_urls = response.xpath('//script/@src').extract()
 
         # Extract other info from page
         title = response.xpath('/html/head/title/text()').extract_first()
@@ -88,8 +92,7 @@ class AlexaSpider(scrapy.Spider):
 
         item = AlexaItem(
             url=url,
-            timestamp=timestamp,
-            pk=pk,
+            rank=rank,
             full_hash=full_hash,
             body_hash=body_hash,
             head_hash=head_hash,
@@ -98,17 +101,20 @@ class AlexaSpider(scrapy.Spider):
             js_urls=js_urls,
             title=title,
             headers=headers,
-            latency=latency,
+            latency=latency
         )
 
-        if len(response.xpath('//script/@src')) > 0:
-            for jsurl in response.xpath('//script/@src').extract():
-                request = scrapy.Request(response.urljoin(jsurl), callback=self.jsParser)
-                request.meta['item'] = {'js_urls':item['js_urls'], 'pk':item['pk']}
-                yield request
-        yield item;
+        item['id'] = pk
+        item['js_content'] = dict()
 
-    def jsParser(self, response):
+        # Generate new reqs for all linked JS
+        for url in js_urls:
+            request = scrapy.Request(response.urljoin(jsurl), callback=self.parse_js)
+            request.meta['item'] = item
+            yield request
+
+    def parse_js(self, response):
+        # Append JS content to item
         item = response.meta['item']
-        item['js_urls'] = {response.url:response.body}
+        item['js_content'][response.url] = response.body.decode('utf-8')
         yield item

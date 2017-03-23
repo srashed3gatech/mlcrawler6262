@@ -17,7 +17,7 @@ def grab_alexa(count=0):
     with open('top1m.zip', 'wb') as f:
         f.write(archive)
 
-    data = OrderedDict()
+    data = []
 
     # Unzip, read, and parse CSV
     with ZipFile('top1m.zip', 'r') as zf:
@@ -28,9 +28,9 @@ def grab_alexa(count=0):
         else:
             raise Exception('Please pass in a positive count.')
 
-        # Parse CSV and convert to dict format
+        # Append each URL to list, in rank order
         for row in csv.reader(lines):
-            data[row[0]] = 'http://' + row[1]
+            data.append('http://' + row[1])
 
     # Clean up (delete .zip file)
     os.remove('top1m.zip')

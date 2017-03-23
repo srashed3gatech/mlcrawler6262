@@ -10,6 +10,7 @@ import scrapy
 class AlexaItem(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
+    rank = scrapy.Field()
     timestamp = scrapy.Field()
     pk = scrapy.Field()
     full_hash = scrapy.Field()
@@ -18,5 +19,6 @@ class AlexaItem(scrapy.Item):
     urls = scrapy.Field()
     urls_hash = scrapy.Field()
     js_urls = scrapy.Field()
+    js_content = scrapy.Field()
     headers = scrapy.Field()
     latency = scrapy.Field()
