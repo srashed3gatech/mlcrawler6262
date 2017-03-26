@@ -36,3 +36,7 @@ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
 #solr 6
 #create a new core with data driven schema
 bin/solr create_core -c crawler
+bin/solr create_core -c blacklist
+
+#python with solr - library install simplejson
+pip3 install simplejson
