@@ -1,0 +1,12 @@
+source venv/bin/activate
+# delete data from solr
+
+http://localhost:8984/solr/#/crawler/documents
+<delete><query>*:*</query></delete>
+
+{"id":"982a4580125703aef9fcf7dd58dc5041",
+"js_urls":{"add" : {"TEST_URL":"TEST JAVASCRIPT"}}
+}
+
+#solr nested doc (if required, we flatten it for now)
+https://www.slideshare.net/anshumg/working-with-deeply-nested-documents-in-apache-solr

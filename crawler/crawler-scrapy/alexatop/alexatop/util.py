@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 ALEXA_LIST_URL = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
 
-def grab_alexa(count=0):
+def grab_alexa(count=0,startIdx=0):
     '''Grabs Alexa top 1M list and returns it as a OrderedDict int (rank) -> str (url)'''
     # Grab ZIP and store on disk
     resp = requests.get(ALEXA_LIST_URL)
@@ -24,7 +24,7 @@ def grab_alexa(count=0):
         lines = [line.decode() for line in zf.open('top-1m.csv', 'r').readlines()]
 
         if count > 0:
-            lines = lines[:count]
+            lines = lines[startIdx:count+startIdx]
         else:
             raise Exception('Please pass in a positive count.')
 
