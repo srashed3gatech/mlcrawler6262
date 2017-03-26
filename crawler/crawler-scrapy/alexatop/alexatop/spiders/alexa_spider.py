@@ -15,7 +15,7 @@ import datetime
 # 4. Start crawling
 
 # Number of Alexa sites to crawl
-CRAWL_NUM = 10
+CRAWL_NUM = 200000
 STARTIDX = 50000-1
 TODAY = datetime.datetime.today().date()
 
