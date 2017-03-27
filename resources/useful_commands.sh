@@ -15,7 +15,7 @@ java -Durl="http://localhost:8983/solr/crawler/update" -Dtype=application/json -
 #run scrapy in background and note pid in run.pid
 nohup scrapy crawl alexa > /dev/null 2>&1 & echo $! > run.pid
 #see log of scrapy
-tail -f /opt/crawler/crawler/crawler-scrapy/alexatop/logs/`ls -1t /opt/crawler/crawler/crawler-scrapy/alexatop/logs/ | head -1`
+tail -f /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs/`ls -1t /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs | head -1`
 
 
 ## configuring dnsmasq for dns caching
@@ -32,6 +32,7 @@ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
 #source srcenv
 #http://askubuntu.com/questions/8653/how-to-keep-processes-running-after-ending-ssh-session
 #tmux
+#leave/detach the tmux session by typing Ctrl+B and then D
 #/opt/crawler/crawler/crawler-scrapy/alexatop$ nohup scrapy crawl alexa > /dev/null 2>&1 & echo $! > run.pid
 
 #solr 6
