@@ -22,6 +22,7 @@ class SolrPipeline(object):
         if(len(itmDict.keys()) == 3): #update only
             solr.add([itmDict], fieldUpdates={'js_contents':'set'})
         else:
+            '''commenting out blacklist verification for performance
             #check if blacklist
             try:
                 domainList = {}
@@ -49,6 +50,7 @@ class SolrPipeline(object):
             except:
                 raise
             finally:
-                print("Insert %s"%itmDict['alexa_rank'])
-                solr.add([itmDict])
+                #print("Insert %s"%itmDict['alexa_rank'])
+                solr.add([itmDict])'''
+            solr.add([itmDict])
         return item
