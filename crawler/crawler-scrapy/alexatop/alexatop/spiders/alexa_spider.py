@@ -142,6 +142,7 @@ class AlexaSpider(scrapy.Spider):
 
         # Generate requests to pull all linked JS on the page
         for i, url in enumerate(js_urls):
+            # TODO: Check if HTTP in URL; if not, use urljoin
             request = scrapy.Request(response.urljoin(url), callback=self.parse_js)
             request.meta['data'] = {
                 'pk': item['pk'],

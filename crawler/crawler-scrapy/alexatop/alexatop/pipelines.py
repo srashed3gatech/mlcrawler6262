@@ -28,7 +28,10 @@ class SolrPipeline(object):
             # Check if any URL is in the blacklists
             if item['crawl_status'] == 'OK':
                 # First, check if any JS URL points to blacklisted site
-                js_urls = {extract_url(url) for url in item['js_urls']}
+                js_urls = set()
+                for url in item['js_urls']:
+                    if 'http://' in url and 'https://' in url:
+                        js_urls.add(extract_url(url))
 
                 if len(js_urls) > 0:
                     query = 'url:({0})'.format(' OR '.join(js_urls))
