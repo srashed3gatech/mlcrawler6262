@@ -7,50 +7,26 @@
 
 import pysolr
 
-SOLR_CORE_URL = 'http://localhost:8983/solr/crawler/'
-
-class AlexaPipeline(object):
-    def process_item(self, item, spider):
-        # Check blacklist if URL
-        return item
+SOLR_BLACKLIST_URL = 'http://localhost:8983/solr/blacklist/'
+SOLR_CRAWL_URL = 'http://localhost:8983/solr/crawler/'
 
 class SolrPipeline(object):
+    solr_crawl = pysolr.Solr(SOLR_CRAWL_URL, timeout=10)
+    solr_blacklist = pysolr.Solr(SOLR_BLACKLIST_URL, timeout=10)
+
     def process_item(self, item, spider):
-        solr = pysolr.Solr(SOLR_CORE_URL, timeout=10)
-        itmDict = dict(item)
-        itmDict['id'] = itmDict['pk']
-        if(len(itmDict.keys()) == 3): #update only
-            solr.add([itmDict], fieldUpdates={'js_contents':'set'})
+        # If only 3 fields, just update the Solr record
+        if len(item) == 3:
+            self.solr_crawl.add([item], fieldUpdates={'js_contents': 'set'})
+        # Otherwise, perform blacklist lookup before inserting the item into Solr core
         else:
-            '''commenting out blacklist verification for performance
-            #check if blacklist
-            try:
-                domainList = {}
-                if(itmDict['url']):
-                    urlDom = "{0.netloc}".format(urlsplit(itmDict['url']))
-                    if(urlDom):
-                        domainList[urlDom]=1
+            # Check if any URL is in the blacklists
+            query = 'url:({0})'.format(' OR '.join(urls))
+            results = self.solr_blacklist.search(q=query, rows=0)
 
-                if(len(itmDict['urls']) > 0):
-                    for url in itmDict['urls']:
-                        urlDom = "{0.netloc}".format(urlsplit(url))
-                        if(urlDom):
-                            domainList[urlDom]=1
+            # Update the item with the result
+            item['blacklist_count'] = results.hits
 
-                if(len(itmDict['js_urls']) > 0):
-                    for url in itmDict['js_urls']:
-                        urlDom = "{0.netloc}".format(urlsplit(url))
-                        if(urlDom):
-                            domainList[urlDom]=1
-                if(len(domainList) > 0):
-                    solrBL = pysolr.Solr(SOLR_BLACKLIST_URL, timeout=10)
-                    results = solrBL.search(q='url:(%s)'%' OR '.join(domainList.keys()),**{'rows':0}) #we only need hit count, not results
-                    itmDict['blacklist_count'] = results.hits
-                domainList.clear()
-            except:
-                raise
-            finally:
-                #print("Insert %s"%itmDict['alexa_rank'])
-                solr.add([itmDict])'''
-            solr.add([itmDict])
+            self.solr_crawl.add([item])
+
         return item
