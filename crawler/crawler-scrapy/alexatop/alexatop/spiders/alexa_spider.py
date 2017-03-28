@@ -144,7 +144,7 @@ class AlexaSpider(scrapy.Spider):
         for i, url in enumerate(js_urls):
             request = scrapy.Request(response.urljoin(url), callback=self.parse_js)
             request.meta['data'] = {
-                'id': item['id'],
+                'pk': item['pk'],
                 'idx': i
             }
 
