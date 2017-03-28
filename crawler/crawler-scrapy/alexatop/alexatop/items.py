@@ -22,6 +22,7 @@ class AlexaItem(scrapy.Item):
     js_contents = scrapy.Field()
     headers = scrapy.Field()
     latency = scrapy.Field()
-    blacklist_count = scrapy.Field()
+    num_blacklist = scrapy.Field()
+    num_js_blacklist = scrapy.Field()
     alexa_rank = scrapy.Field()
     crawl_status = scrapy.Field()
