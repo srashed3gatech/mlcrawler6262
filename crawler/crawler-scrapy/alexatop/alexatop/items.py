@@ -11,7 +11,7 @@ class AlexaItem(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
     full_html = scrapy.Field()
-    timestamp = scrapy.Field()
+    date = scrapy.Field()
     pk = scrapy.Field()
     full_hash = scrapy.Field()
     body_hash = scrapy.Field()

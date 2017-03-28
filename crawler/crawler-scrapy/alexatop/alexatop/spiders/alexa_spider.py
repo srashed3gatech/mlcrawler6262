@@ -8,7 +8,6 @@ from twisted.internet.error import DNSLookupError, TimeoutError
 import random
 import re
 import time
-import datetime
 
 # 1. Grab Alex top 1M list from source
 # 2. Extract archive
@@ -18,7 +17,9 @@ import datetime
 # Number of Alexa sites to crawl
 CRAWL_NUM = 200000
 STARTIDX = 50000-1
-TODAY = datetime.datetime.today().date()
+
+# Today's date, in Solr format
+TODAY = get_today()
 
 class AlexaSpider(scrapy.Spider):
     name = 'alexa'
@@ -49,12 +50,11 @@ class AlexaSpider(scrapy.Spider):
 
         request = failure.request
         url = request.url
-        timestamp = time.time()
         pk = compute_md5('{0}{1}'.format(url, TODAY))
 
         item = AlexaItem(
             url=url,
-            timestamp=timestamp,
+            date=TODAY,
             crawl_status=crawl_status,
             alexa_rank=failure.request.meta['rank']
         )
@@ -123,8 +123,8 @@ class AlexaSpider(scrapy.Spider):
 
         item = AlexaItem(
             url=page_url,
-            timestamp=timestamp,
             title=title,
+            date=TODAY,
             full_html = full,
             full_hash=full_hash,
             body_hash=body_hash,
@@ -141,6 +141,8 @@ class AlexaSpider(scrapy.Spider):
 
         item['id'] = pk
 
+        yield item
+
         # Generate requests to pull all linked JS on the page
         for i, url in enumerate(js_urls):
             request = scrapy.Request(response.urljoin(url), callback=self.parse_js)
@@ -152,8 +154,6 @@ class AlexaSpider(scrapy.Spider):
             # TODO: Skip large JS?
 
             yield request
-
-        yield item
 
     def parse_js(self, response):
         data = response.meta['data']

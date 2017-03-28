@@ -3,11 +3,20 @@ import csv
 import json
 import hashlib
 import requests
+from datetime import datetime
 from urllib.parse import urlparse
 from zipfile import ZipFile
 from collections import OrderedDict
 
 ALEXA_LIST_URL = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
+
+SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
+def format_date(dt, fmt=SOLR_DATE_FORMAT):
+    return datdatetime.strftime(dt, fmt)
+
+def get_today():
+    return format_date(datetime.now())
 
 def extract_url(url):
     p = urlparse(url)
