@@ -81,7 +81,7 @@ class AlexaSpider(scrapy.Spider):
         '''
         # Compute a "unique" primary key for Solr indexing
         page_url = response.url
-        pk = compute_md5('{0}{1}'.format(url, TODAY))
+        pk = compute_md5('{0}{1}'.format(page_url, TODAY))
 
         # Compute MD5 hashes of page sections
         full = response.xpath('/html').extract_first()
