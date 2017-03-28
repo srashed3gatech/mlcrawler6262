@@ -6,6 +6,7 @@ from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError, TimeoutError
 
 import random
+import re
 import time
 import datetime
 
@@ -31,33 +32,35 @@ class AlexaSpider(scrapy.Spider):
 
     def req_error(self, failure):
         # http://stackoverflow.com/questions/31146046/how-do-i-catch-errors-with-scrapy-so-i-can-do-something-when-i-get-user-timeout
-        crawl_status = ""
+        crawl_status = None
+
         if failure.check(HttpError):
-            response = failure.value.response
-            crawl_status = 'HttpError for {}'.format(response.url)
+            crawl_status = 'HTTPError'
             self.logger.error(crawl_status)
         elif failure.check(DNSLookupError):
-            request = failure.request
-            crawl_status = 'DNSLookupError for {}'.format(request.url)
+            crawl_status = 'DNSLookupError'
             self.logger.error(crawl_status)
         elif failure.check(TimeoutError):
-            request = failure.request
             crawl_status = 'TimeoutError for {}'.format(request.url)
             self.logger.error(crawl_status)
         else:
             crawl_status = repr(failure)
             self.logger.error(repr(failure))
 
-        url = failure.request.url
+        request = failure.request
+        url = request.url
         timestamp = time.time()
         pk = compute_md5('{0}{1}'.format(url, TODAY))
+
         item = AlexaItem(
             url=url,
-            pk=pk,
             timestamp=timestamp,
             crawl_status=crawl_status,
             alexa_rank=failure.request.meta['rank']
         )
+
+        item['id'] = pk
+
         yield item
 
     def parse(self, response):
@@ -78,7 +81,7 @@ class AlexaSpider(scrapy.Spider):
             - Google Analytics ID
         '''
         # Compute a "unique" primary key for Solr indexing
-        url = response.url
+        page_url = response.url
         timestamp = time.time()
         pk = compute_md5('{0}{1}'.format(url, TODAY))
 
@@ -92,29 +95,35 @@ class AlexaSpider(scrapy.Spider):
         head = response.xpath('/html/head').extract_first()
         head_hash = compute_md5(head)
 
-        # Extract ALL valid urls from page
-        urls = [url for url in response.xpath('//a/@href').extract() if 'http' in url]
+        # Extract ALL valid urls from page; keep only domain, remove any pages
+        urls_all = [url for url in response.xpath('//a/@href').extract() if 'http' in url]
+        urls_set = set()
+
+        for url in urls_all:
+            parsed = extract_url(url)
+            urls_set.add(parsed)
+
+        urls = list(urls_set)
         urls_hash = compute_md5(''.join(urls))
 
-        # Extract JS links
-        if len(response.xpath('//script/@src').extract()) > 0 :
-            js_urls =  response.xpath('//script/@src').extract()
-            js_contents = ["NO_DATA"] * len(js_urls) #fixed size
-        else:
-            js_urls = []
-            js_contents = []
+        # Extract JS links from page
+        js_urls = response.xpath('//script/@src').extract()
+
+        # TODO: Extract JS content from <script></script> elements?
+
+        # Allocate entries for JS contents
+        js_contents = ['N' for url in js_urls]
 
         # Extract other info from page
         title = response.xpath('/html/head/title/text()').extract_first()
         headers = dict_to_json(response.headers)
         latency = response.meta['download_latency']
         rank = response.meta['rank']
-        crawl_status = "OK"
+        crawl_status = 'OK'
 
         item = AlexaItem(
-            url=url,
+            url=page_url,
             timestamp=timestamp,
-            pk=pk,
             title=title,
             full_html = full,
             full_hash=full_hash,
@@ -126,21 +135,27 @@ class AlexaSpider(scrapy.Spider):
             js_contents = js_contents,
             headers=headers,
             latency=latency,
-            blacklist_count=0, #we'll get value on pipelines
             alexa_rank = rank,
             crawl_status = crawl_status
         )
 
-        if len(js_urls) > 0:
-            for jsurl in js_urls:
-                request = scrapy.Request(response.urljoin(jsurl), callback=self.jsParser)
-                request.meta['item'] = {'js_contents':item['js_contents'], 'pk':item['pk']}
-                request.meta['item_index'] = js_urls.index(jsurl)
-                yield request
-        yield item;
+        item['id'] = pk
 
-    def jsParser(self, response):
-        item = response.meta['item']
-        item_index = response.meta['item_index']
-        item['js_contents'][item_index] = response.body
+        # Generate requests to pull all linked JS on the page
+        for i, url in enumerate(js_urls):
+            request = scrapy.Request(response.urljoin(url), callback=self.parse_js)
+            request.meta['data'] = {
+                'id': item['id'],
+                'idx': i
+            }
+
+            # TODO: Skip large JS?
+
+            yield request
+
         yield item
+
+    def parse_js(self, response):
+        data = response.meta['data']
+        data['js_contents'] = response.body
+        yield data
