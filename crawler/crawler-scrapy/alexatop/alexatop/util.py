@@ -3,10 +3,15 @@ import csv
 import json
 import hashlib
 import requests
+from urllib.parse import urlparse
 from zipfile import ZipFile
 from collections import OrderedDict
 
 ALEXA_LIST_URL = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
+
+def extract_url(url):
+    p = urlparse(url)
+    return p.netloc
 
 def grab_alexa(count=0,startIdx=0):
     '''Grabs Alexa top 1M list and returns it as a OrderedDict int (rank) -> str (url)'''
