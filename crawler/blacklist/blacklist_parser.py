@@ -20,6 +20,7 @@ REGEXES = {
     'url': re.compile(r'^(\S+)$')
 }
 
+# TODO: Add OpenPhish as source
 BLACKLIST_SOURCES = [
     {'url': 'https://hosts-file.net/psh.txt', 'format': 'hosts', 'type': 'phish'},
     {'url': 'https://hosts-file.net/exp.txt', 'format': 'hosts', 'type': 'exploit'},

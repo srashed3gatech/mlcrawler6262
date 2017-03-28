@@ -13,13 +13,10 @@ ALEXA_LIST_URL = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
 SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 def format_date(dt, fmt=SOLR_DATE_FORMAT):
-    return datdatetime.strftime(dt, fmt)
+    return datetime.strftime(dt, fmt)
 
 def get_today():
-    date = datetime.now()
-    date.second = 0
-    date.minute = 0
-    date.hour = 0
+    date = datetime.now().replace(hour=0, second=0, minute=0)
     return format_date(datetime.now())
 
 def get_now():
