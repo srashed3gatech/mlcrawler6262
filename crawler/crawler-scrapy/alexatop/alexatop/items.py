@@ -26,3 +26,6 @@ class AlexaItem(scrapy.Item):
     num_js_blacklist = scrapy.Field()
     alexa_rank = scrapy.Field()
     crawl_status = scrapy.Field()
+
+class JSItem(scrapy.Item):
+    pass

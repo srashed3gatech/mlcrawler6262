@@ -17,6 +17,9 @@ class SolrPipeline(object):
     solr_blacklist = pysolr.Solr(SOLR_BLACKLIST_URL, timeout=10)
 
     def process_item(self, item, spider):
+        item = dict(item)
+        item['id'] = item['pk']
+
         # If only 3 fields, just update the Solr record
         if len(item) == 3:
             self.solr_crawl.add([item], fieldUpdates={'js_contents': 'set'})

@@ -54,12 +54,11 @@ class AlexaSpider(scrapy.Spider):
 
         item = AlexaItem(
             url=url,
+            pk=pk,
             date=TODAY,
             crawl_status=crawl_status,
             alexa_rank=failure.request.meta['rank']
         )
-
-        item['id'] = pk
 
         yield item
 
@@ -123,6 +122,7 @@ class AlexaSpider(scrapy.Spider):
         item = AlexaItem(
             url=page_url,
             title=title,
+            pk=pk,
             date=TODAY,
             full_html = full,
             full_hash=full_hash,
@@ -137,8 +137,6 @@ class AlexaSpider(scrapy.Spider):
             alexa_rank = rank,
             crawl_status = crawl_status
         )
-
-        item['id'] = pk
 
         yield item
 
