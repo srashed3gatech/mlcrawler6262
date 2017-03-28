@@ -29,8 +29,8 @@ LOG_FILE = os.path.join(log_folder,
 # ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 500
-REACTOR_THREADPOOL_MAXSIZE = 360
+CONCURRENT_REQUESTS = 300
+REACTOR_THREADPOOL_MAXSIZE = 50
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay

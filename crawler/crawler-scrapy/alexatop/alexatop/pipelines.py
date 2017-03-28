@@ -7,7 +7,7 @@
 
 import pysolr
 
-from ..util import extract_url
+from .util import *
 
 SOLR_BLACKLIST_URL = 'http://localhost:8983/solr/blacklist/'
 SOLR_CRAWL_URL = 'http://localhost:8983/solr/crawler/'
