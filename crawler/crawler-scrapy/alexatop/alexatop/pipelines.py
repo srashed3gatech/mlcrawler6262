@@ -29,16 +29,21 @@ class SolrPipeline(object):
             if item['crawl_status'] == 'OK':
                 # First, check if any JS URL points to blacklisted site
                 js_urls = set(item['js_urls'])
-                query = 'url:({0})'.format(' OR '.join(js_urls))
-                js_results = self.solr_blacklist.search(q=query, rows=0)
+                if len(js_urls) > 0:
+                    query = 'url:({0})'.format(' OR '.join(js_urls))
+                    results = self.solr_blacklist.search(q=query, rows=0)
+                    item['num_js_blacklist'] = results.hits
+                else:
+                    item['num_js_blacklist'] = 0
 
                 # Next, check for just linked URLs in the blacklist
-                query = 'url:({0})'.format(' OR '.join(urls))
-                url_results = self.solr_blacklist.search(q=query, rows=0)
-
-                # Update the item with the results from both checks
-                item['num_blacklist'] = url_results.hits
-                item['num_js_blacklist'] = js_results.hits
+                urls = set(item['urls'])
+                if len(urls) > 0:
+                    query = 'url:({0})'.format(' OR '.join(urls))
+                    results = self.solr_blacklist.search(q=query, rows=0)
+                    item['num_blacklist'] = results.hits
+                else:
+                    item['num_blacklist'] = 0
 
             self.solr_crawl.add([item])
 
