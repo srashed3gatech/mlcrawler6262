@@ -26,19 +26,19 @@ class SolrPipeline(object):
         # Otherwise, perform blacklist lookup before inserting the item into Solr core
         else:
             # Check if any URL is in the blacklists
+            if item['crawl_status'] == 'OK':
+                # First, check if any JS URL points to blacklisted site
+                js_urls = set(item['js_urls'])
+                query = 'url:({0})'.format(' OR '.join(js_urls))
+                js_results = self.solr_blacklist.search(q=query, rows=0)
 
-            # First, check if any JS URL points to blacklisted site
-            js_urls = set(item['js_urls'])
-            query = 'url:({0})'.format(' OR '.join(js_urls))
-            js_results = self.solr_blacklist.search(q=query, rows=0)
+                # Next, check for just linked URLs in the blacklist
+                query = 'url:({0})'.format(' OR '.join(urls))
+                url_results = self.solr_blacklist.search(q=query, rows=0)
 
-            # Next, check for just linked URLs in the blacklist
-            query = 'url:({0})'.format(' OR '.join(urls))
-            url_results = self.solr_blacklist.search(q=query, rows=0)
-
-            # Update the item with the results from both checks
-            item['num_blacklist'] = url_results.hits
-            item['num_js_blacklist'] = js_results.hits
+                # Update the item with the results from both checks
+                item['num_blacklist'] = url_results.hits
+                item['num_js_blacklist'] = js_results.hits
 
             self.solr_crawl.add([item])
 
