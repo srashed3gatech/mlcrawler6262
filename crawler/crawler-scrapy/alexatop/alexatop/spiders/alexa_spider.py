@@ -82,7 +82,6 @@ class AlexaSpider(scrapy.Spider):
         '''
         # Compute a "unique" primary key for Solr indexing
         page_url = response.url
-        timestamp = time.time()
         pk = compute_md5('{0}{1}'.format(url, TODAY))
 
         # Compute MD5 hashes of page sections

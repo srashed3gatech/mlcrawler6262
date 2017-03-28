@@ -16,7 +16,14 @@ def format_date(dt, fmt=SOLR_DATE_FORMAT):
     return datdatetime.strftime(dt, fmt)
 
 def get_today():
+    date = datetime.now()
+    date.second = 0
+    date.minute = 0
+    date.hour = 0
     return format_date(datetime.now())
+
+def get_now():
+    pass
 
 def extract_url(url):
     p = urlparse(url)
