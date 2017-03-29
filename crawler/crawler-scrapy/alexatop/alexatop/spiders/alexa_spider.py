@@ -152,5 +152,5 @@ class AlexaSpider(scrapy.Spider):
 
     def parse_js(self, response):
         data = response.meta['data']
-        data['js_contents'][request.meta['js_url_idx']] = response.body
+        data['js_contents'][response.meta['js_url_idx']] = response.body
         yield data
