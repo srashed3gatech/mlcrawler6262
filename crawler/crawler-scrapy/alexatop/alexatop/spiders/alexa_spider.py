@@ -142,12 +142,9 @@ class AlexaSpider(scrapy.Spider):
 
         # Generate requests to pull all linked JS on the page
         for i, url in enumerate(js_urls):
-            # TODO: Check if HTTP in URL; if not, use urljoin
             request = scrapy.Request(response.urljoin(url), callback=self.parse_js)
-            request.meta['data'] = {
-                'pk': item['pk'],
-                'idx': i
-            }
+            request.meta['data'] = {'pk': item['pk']}
+            request.meta['js_url_idx'] = i;
 
             # TODO: Skip large JS?
 
@@ -155,5 +152,5 @@ class AlexaSpider(scrapy.Spider):
 
     def parse_js(self, response):
         data = response.meta['data']
-        data['js_contents'] = response.body
+        data['js_contents'][request.meta['js_url_idx']] = response.body
         yield data
