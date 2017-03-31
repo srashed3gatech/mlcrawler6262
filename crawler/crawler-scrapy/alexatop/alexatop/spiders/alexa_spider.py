@@ -15,8 +15,8 @@ import time
 # 4. Start crawling
 
 # Number of Alexa sites to crawl
-CRAWL_NUM = 200000
-STARTIDX = 50000-1
+CRAWL_NUM = 600000
+STARTIDX = 100000-1
 
 # Today's date, in Solr format
 TODAY = get_today()
@@ -42,14 +42,13 @@ class AlexaSpider(scrapy.Spider):
             crawl_status = 'DNSLookupError'
             self.logger.error(crawl_status)
         elif failure.check(TimeoutError):
-            crawl_status = 'TimeoutError for {}'.format(request.url)
+            crawl_status = 'TimeoutError for {}'.format(failure.request.url)
             self.logger.error(crawl_status)
         else:
             crawl_status = repr(failure)
             self.logger.error(repr(failure))
 
-        request = failure.request
-        url = request.url
+        url = failure.request.url
         pk = compute_md5('{0}{1}'.format(url, TODAY))
 
         item = AlexaItem(
@@ -110,7 +109,7 @@ class AlexaSpider(scrapy.Spider):
         # TODO: Extract JS content from <script></script> elements?
 
         # Allocate entries for JS contents
-        js_contents = ['N' for url in js_urls]
+        # js_contents = ['N' for url in js_urls]
 
         # Extract other info from page
         title = response.xpath('/html/head/title/text()').extract_first()
@@ -131,7 +130,7 @@ class AlexaSpider(scrapy.Spider):
             urls=urls,
             urls_hash=urls_hash,
             js_urls=js_urls,
-            js_contents = js_contents,
+            #js_contents = js_contents,
             headers=headers,
             latency=latency,
             alexa_rank = rank,
@@ -141,16 +140,16 @@ class AlexaSpider(scrapy.Spider):
         yield item
 
         # Generate requests to pull all linked JS on the page
-        for i, url in enumerate(js_urls):
+        # STOPPING JS COLLECTION FOR FAST DATA COLLECTION IN FILE -
+        #   Q-how can we collcect js and still push them under same doc while its on file
+        '''for i, url in enumerate(js_urls):
             request = scrapy.Request(response.urljoin(url), callback=self.parse_js)
             request.meta['data'] = {'js_contents':item['js_contents'],'pk': item['pk']}
             request.meta['js_url_idx'] = i;
-
             # TODO: Skip large JS?
+            yield request'''
 
-            yield request
-
-    def parse_js(self, response):
+    '''def parse_js(self, response):
         data = response.meta['data']
         data['js_contents'][response.meta['js_url_idx']] = response.body
-        yield data
+        yield data'''

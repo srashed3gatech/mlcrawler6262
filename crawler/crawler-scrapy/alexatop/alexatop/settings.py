@@ -29,7 +29,7 @@ LOG_FILE = os.path.join(log_folder,
 # ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 300
+CONCURRENT_REQUESTS = 130
 REACTOR_THREADPOOL_MAXSIZE = 150
 
 # Configure a delay for requests for the same website (default: 0)
@@ -75,7 +75,7 @@ DOWNLOADER_MIDDLEWARES = {
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     # 'alexatop.pipelines.AlexaPipeline': 300,
-    'alexatop.pipelines.SolrPipeline': 300,
+    # 'alexatop.pipelines.SolrPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -103,11 +103,11 @@ ITEM_PIPELINES = {
 RETRY_ENABLED = True
 RETRY_TIMES = 1
 
-# Item export (TEMPORARY)
-# FEED_FORMAT = 'json'
-# OUTPUT_FILE = os.path.join(os.getcwd(), 'output', 'results-{0}.json'.format(time.strftime('%d-%m-%y-%H%M%S')))
-# os.makedirs(os.path.join(os.getcwd(), 'output'), exist_ok=True)
-# FEED_URI = 'file://' + OUTPUT_FILE
+# Item export
+FEED_FORMAT = 'json'
+OUTPUT_FILE = os.path.join(os.getcwd(), 'data', 'crawldata-{0}.json'.format(time.strftime('%d-%m-%y')))
+os.makedirs(os.path.join(os.getcwd(), 'data'), exist_ok=True)
+FEED_URI = 'file://' + OUTPUT_FILE
 
 # Source: http://www.danmorgan.net/random-user-agent.phps
 USER_AGENTS = [
