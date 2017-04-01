@@ -104,7 +104,7 @@ RETRY_ENABLED = True
 RETRY_TIMES = 1
 
 # Item export
-FEED_FORMAT = 'json'
+FEED_FORMAT = 'jsonlines'
 OUTPUT_FILE = os.path.join(os.getcwd(), 'data', 'crawldata-{0}.json'.format(time.strftime('%d-%m-%y')))
 os.makedirs(os.path.join(os.getcwd(), 'data'), exist_ok=True)
 FEED_URI = 'file://' + OUTPUT_FILE

@@ -15,8 +15,8 @@ import time
 # 4. Start crawling
 
 # Number of Alexa sites to crawl
-CRAWL_NUM = 600000
-STARTIDX = 100000-1
+CRAWL_NUM = 1000000
+STARTIDX = 0
 
 # Today's date, in Solr format
 TODAY = get_today()
