@@ -9,6 +9,7 @@ CRAWL_NUM = int(100e3)
 
 # Grab Alexa top 1M
 sites = util.grab_alexa(ALEXA_MAX)
+stop = False
 
 for start in range(0, ALEXA_MAX, CRAWL_NUM):
     # Generate new log file for run
@@ -20,4 +21,8 @@ for start in range(0, ALEXA_MAX, CRAWL_NUM):
 
     # Start the spider and block until completed
     process.crawl(AlexaSpider, urls=start_urls)
-    process.start(stop_after_crawl=False)
+
+    if start + CRAWL_NUM + 1 == ALEXA_MAX:
+        stop = True
+
+    process.start(stop_after_crawl=stop)
