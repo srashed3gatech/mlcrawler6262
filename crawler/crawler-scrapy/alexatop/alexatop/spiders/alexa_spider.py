@@ -25,6 +25,8 @@ class AlexaSpider(scrapy.Spider):
     name = 'alexa'
 
     def start_requests(self):
+        self.urls = self.urls.split(',')
+
         for i, url in enumerate(self.urls):
             req = scrapy.Request(url=url, callback=self.parse,
                                  errback=self.req_error)
