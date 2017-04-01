@@ -26,7 +26,7 @@ def extract_url(url):
     p = urlparse(url)
     return p.netloc
 
-def grab_alexa(count=0,startIdx=0):
+def grab_alexa(count=0,start_idx=0):
     '''Grabs Alexa top 1M list and returns it as a OrderedDict int (rank) -> str (url)'''
     # Grab ZIP and store on disk
     resp = requests.get(ALEXA_LIST_URL)
@@ -35,14 +35,14 @@ def grab_alexa(count=0,startIdx=0):
     with open('top1m.zip', 'wb') as f:
         f.write(archive)
 
-    data = OrderedDict()
+    data = []
 
     # Unzip, read, and parse CSV
     with ZipFile('top1m.zip', 'r') as zf:
         lines = [line.decode() for line in zf.open('top-1m.csv', 'r').readlines()]
 
         if count > 0:
-            lines = lines[startIdx:count+startIdx]
+            lines = lines[start_idx:count+start_idx]
         else:
             raise Exception('Please pass in a positive count.')
 

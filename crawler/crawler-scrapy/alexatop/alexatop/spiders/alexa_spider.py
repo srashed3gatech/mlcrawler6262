@@ -25,7 +25,7 @@ class AlexaSpider(scrapy.Spider):
     name = 'alexa'
 
     def start_requests(self):
-        for i, url in grab_alexa(CRAWL_NUM,STARTIDX).items():
+        for i, url in enumerate(self.urls):
             req = scrapy.Request(url=url, callback=self.parse,
                                  errback=self.req_error)
             req.meta['rank'] = i
