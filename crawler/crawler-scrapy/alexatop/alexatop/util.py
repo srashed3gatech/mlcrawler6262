@@ -3,10 +3,10 @@ import csv
 import json
 import hashlib
 import requests
+
 from datetime import datetime
 from urllib.parse import urlparse
 from zipfile import ZipFile
-from collections import OrderedDict
 
 ALEXA_LIST_URL = 'http://s3.amazonaws.com/alexa-static/top-1m.csv.zip'
 
@@ -48,7 +48,7 @@ def grab_alexa(count=0,start_idx=0):
 
         # Parse CSV and convert to dict format
         for row in csv.reader(lines):
-            data[row[0]] = 'http://' + row[1]
+            data.append('http://' + row[1])
 
     # Clean up (delete .zip file)
     os.remove('top1m.zip')
