@@ -35,6 +35,27 @@ srashed3@acs-8:~$ sudo netstat -antup | grep dnsmasq
 tcp        0      0 127.0.1.1:53            0.0.0.0:*               LISTEN      22969/dnsmasq
 udp        0      0 127.0.1.1:53            0.0.0.0:*                           22969/dnsmasq
 
+srashed3@acs-8:~$ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
+/var/log/syslog.1:Apr  1 07:07:49 acs-8 dnsmasq[22969]: setting upstream servers from DBus
+/var/log/syslog.1:Apr  1 07:07:49 acs-8 dnsmasq[22969]: exiting on receipt of SIGTERM
+/var/log/syslog.1:Apr  1 07:07:50 acs-8 NetworkManager[24658]: <info> DNS: loaded plugin dnsmasq
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 NetworkManager[24658]: <info> DNS: starting dnsmasq...
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 NetworkManager[24658]: <warn> dnsmasq not available on the bus, can't update servers.
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 NetworkManager[24658]: <error> [1491044871.219307] [nm-dns-dnsmasq.c:396] update(): dnsmasq owner not found on bus: Could not get owner of name 'org.freedesktop.NetworkManager.dnsmasq': no such name
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 NetworkManager[24658]: <warn> DNS: plugin dnsmasq update failed
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: started, version 2.68 cachesize 10000
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: compile time options: IPv6 GNU-getopt DBus i18n IDN DHCP DHCPv6 no-Lua TFTP conntrack ipset auth
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: DBus support enabled: connected to system bus
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: warning: no upstream servers configured
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: cleared cache
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 NetworkManager[24658]: <warn> dnsmasq appeared on DBus: :1.2602
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: setting upstream servers from DBus
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: using nameserver 143.215.143.72#53
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: using nameserver 130.207.165.170#53
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: using nameserver 130.207.17.22#53
+/var/log/syslog.1:Apr  1 07:07:51 acs-8 dnsmasq[24669]: using nameserver 130.207.17.21#53
+
+
 #increasing max file open limit (ulimit -n) for crawler user
 #http://stackoverflow.com/questions/21515463/how-to-increase-maximum-file-open-limit-ulimit-in-ubuntu
 srashed3@acs-8:~$ sudo vim /etc/security/limits.conf
@@ -67,3 +88,7 @@ jq .'pk' crawldata-30-03-17.json  | wc -l
 jq 'select(.crawl_status!="OK") | .pk' crawldata-31-03-17.json | wc -l
 #get dnslookup error
 jq 'select(.crawl_status=="DNSLookupError") | .pk' crawldata-31-03-17.json | wc -l
+srashed3@acs-8:~$ jq 'select(.crawl_status=="OK") | .pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
+4689
+srashed3@acs-8:~$ jq 'select(.crawl_status!="OK") | .pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
+3436
