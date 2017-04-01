@@ -1,5 +1,6 @@
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
+from twisted.internet import reactor
 
 import alexatop.util as util
 from alexatop.spiders.alexa_spider import AlexaSpider
@@ -14,15 +15,13 @@ stop = False
 for start in range(0, ALEXA_MAX, CRAWL_NUM):
     # Generate new log file for run
     settings = get_project_settings()
-    process = CrawlerProcess(settings)
+    runner = CrawlerRunner(settings)
 
     # Get start URLs for current run
     start_urls = sites[start:start+CRAWL_NUM]
 
     # Start the spider and block until completed
-    process.crawl(AlexaSpider, urls=start_urls)
+    d = runner.crawl(AlexaSpider, urls=start_urls)
+    d.addBoth(lambda _: reactor.stop())
 
-    if start + CRAWL_NUM + 1 == ALEXA_MAX:
-        stop = True
-
-    process.start(stop_after_crawl=stop)
+    reactor.run()
