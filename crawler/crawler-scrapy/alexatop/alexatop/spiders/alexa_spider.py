@@ -84,13 +84,16 @@ class AlexaSpider(scrapy.Spider):
 
         # Compute MD5 hashes of page sections
         full = response.xpath('/html').extract_first()
-        full_hash = compute_md5(full)
-
         body = response.xpath('/html/body').extract_first()
-        body_hash = compute_md5(body)
-
         head = response.xpath('/html/head').extract_first()
+
+        # Stop crawling the page if it is invalid HTML
+        if not (full and body and head):
+            return []
+
+        full_hash = compute_md5(full)
         head_hash = compute_md5(head)
+        body_hash = compute_md5(body)
 
         # Extract ALL valid urls from page; keep only domain, remove any pages
         urls_all = [url for url in response.xpath('//a/@href').extract() if 'http' in url]
