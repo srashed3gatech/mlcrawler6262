@@ -18,12 +18,12 @@ sites = util.grab_alexa(ALEXA_MAX)
 
 for start in range(START_RANK-1, ALEXA_MAX, CRAWL_NUM):
     # Get start URLs for current run
-    start_urls = sites[start:start+CRAWL_NUM]
+    start_urls = '\n'.join(sites[start:start+CRAWL_NUM])
 
     # Write URLs of current run to a unique file
     url_file = os.path.join(URLS_DIR, '{0}-{1}'.format(start+1, start+CRAWL_NUM))
     with open(url_file, 'w') as f:
-        f.writelines(start_urls)
+        f.write(start_urls)
 
     # Start the spider and block until completed
     # Pass path to current file
