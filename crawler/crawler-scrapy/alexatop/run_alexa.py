@@ -7,8 +7,8 @@ import alexatop.util as util
 from alexatop.spiders.alexa_spider import AlexaSpider
 
 ALEXA_MAX = int(1e6)
-CRAWL_NUM = int(100e3)
 START_RANK = 1
+CRAWL_NUM = int(100e3)
 
 URLS_DIR = os.path.join(os.getcwd(), 'urls')
 os.makedirs(URLS_DIR, exist_ok=True) # Create the folder
