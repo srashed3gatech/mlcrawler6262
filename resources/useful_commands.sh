@@ -83,12 +83,23 @@ pip3 install simplejson
 
 #use jq to get file stats
 #get primary key count from crawled data
-jq .'pk' crawldata-30-03-17.json  | wc -l
+jq .'pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
 #get count of pk where there was error
-jq 'select(.crawl_status!="OK") | .pk' crawldata-31-03-17.json | wc -l
+jq 'select(.crawl_status!="OK") | .pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
 #get dnslookup error
-jq 'select(.crawl_status=="DNSLookupError") | .pk' crawldata-31-03-17.json | wc -l
+jq 'select(.crawl_status=="DNSLookupError") | .pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
+
+#other jq queries (conditional)
 srashed3@acs-8:~$ jq 'select(.crawl_status=="OK") | .pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
 4689
 srashed3@acs-8:~$ jq 'select(.crawl_status!="OK") | .pk' /home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawldata-01-04-17.json | wc -l
 3436
+
+#cronjob config
+crontab -e
+1 0 * * * /home/crawler/bin/run_crawler_cron.sh > /home/crawler/crawler_run_history.log 2>&1
+crawler@acs-8:~/bin$ cat /home/crawler/bin/run_crawler_cron.sh
+#!/bin/bash
+. ~/.venv/main/bin/activate
+cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
+nohup scrapy crawl alexa & echo "STARTING CRAWLER AT PID# $! @ $(date)"
