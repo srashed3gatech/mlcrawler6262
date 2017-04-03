@@ -25,13 +25,15 @@ class AlexaSpider(scrapy.Spider):
     name = 'alexa'
 
     def start_requests(self):
-        self.urls = self.urls.split(',')
-
-        for i, url in enumerate(self.urls):
-            req = scrapy.Request(url=url, callback=self.parse,
-                                 errback=self.req_error)
-            req.meta['rank'] = i
-            yield req
+        with open(self.urls_file, 'r') as f:
+            i = 1
+            for line in f:
+                url = line.replace('\n', '')
+                req = scrapy.Request(url=url, callback=self.parse,
+                                     errback=self.req_error)
+                req.meta['rank'] = i
+                i += 1
+                yield req
 
     def req_error(self, failure):
         # http://stackoverflow.com/questions/31146046/how-do-i-catch-errors-with-scrapy-so-i-can-do-something-when-i-get-user-timeout
