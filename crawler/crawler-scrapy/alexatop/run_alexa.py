@@ -7,7 +7,7 @@ import alexatop.util as util
 from alexatop.spiders.alexa_spider import AlexaSpider
 
 ALEXA_MAX = int(1e6)
-START_RANK = 1
+START_RANK = 300001
 CRAWL_NUM = int(100e3)
 
 URLS_DIR = os.path.join(os.getcwd(), 'urls')
