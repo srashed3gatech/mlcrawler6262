@@ -7,6 +7,7 @@
 source /home/USERNAME/.bashrc
 # There has to be tmux session named alexa
 # if not (first time) create one: /usr/bin/tmux new-session -d -s alexa
+# and detach dont exit/logout by [ctrl+b, d]
 # to check tmux open session: tmux ls
 /usr/bin/tmux a -t alexa
 # ...and control the tmux session (initially ensure the environment
