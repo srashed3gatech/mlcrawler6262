@@ -1,10 +1,7 @@
 import re
 import os
-import json
-from hashlib import md5
+import urllib.request
 from datetime import datetime
-
-import requests
 
 '''
     Formats:
@@ -30,14 +27,14 @@ BLACKLIST_SOURCES = [
     {'url': 'https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt', 'format': 'url', 'type': 'all'},
 ]
 
-SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+DATE_FORMAT = '%Y-%m-%d'
 
-def format_date(dt, fmt=SOLR_DATE_FORMAT):
+def format_date(dt, fmt=DATE_FORMAT):
     return datetime.strftime(dt, fmt)
 
 TODAY = format_date(datetime.now())
 
-OUTPUT_FILE = 'data.json'
+OUTPUT_FILE = 'blacklist-{0}.csv'.format(TODAY)
 
 class BlacklistParser:
     '''
@@ -45,9 +42,10 @@ class BlacklistParser:
 
         Throws: Exception
     '''
-    def __init__(self, lines, f):
+    def __init__(self, lines, f, t):
         self.results = []
         self.format = f
+        self.type = t
 
         if self.format not in FORMATS:
             raise Exception('Invalid blacklist format!')
@@ -80,21 +78,13 @@ class BlacklistParser:
         # Extract fields from regex output
         if self.format == 'hosts':
             result['url'] = groups.strip()
+            result['type'] = self.type
         elif self.format == 'malwaredomains':
             result['url'] = groups[0].strip()
             result['type'] = groups[1].strip()
-            result['source'] = groups[2].strip()
-
-            # Convert date to Python datetime, then re-format for Solr
-            dt = datetime.strptime(groups[3].strip(), '%Y%M%d')
-            result['date'] = format_date(dt)
         elif self.format == 'url':
             result['url'] = groups.strip()
-
-        if self.format != 'malwaredomains':
-            result['type'] = 'all'
-            result['source'] = 'unknown'
-            result['date'] = TODAY
+            result['type'] = self.type
 
         return result
 
@@ -107,18 +97,19 @@ def main():
 
     # Grab each of the blacklists and parse them
     for source in BLACKLIST_SOURCES:
-        r = requests.get(source['url'])
-        lines = r.text.split('\n')
+        r = urllib.request.urlopen(source['url'])
+        lines = r.read().decode('utf-8').split('\n')
 
-        b = BlacklistParser(lines, source['format'])
+        b = BlacklistParser(lines, source['format'], source['type'])
 
-        # Dump results into JSON file (append)
+        # Dump results into TXT file (append)
         with open(OUTPUT_FILE, 'a') as f:
-            json.dump(b.results, f)
+            for result in b.results:
+                f.write('{0},{1}\n'.format(result['url'], result['type']))
 
         print('- Completed source: {0}'.format(source['url']))
 
-    print('- Results written to data.json')
+    print('- Results written to {0}'.format(OUTPUT_FILE))
 
 if __name__ == '__main__':
     main()

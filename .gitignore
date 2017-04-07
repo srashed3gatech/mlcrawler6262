@@ -4,4 +4,4 @@ __pycache__/
 logs/
 output/
 top1m.zip
-
+*.csv
