@@ -12,6 +12,6 @@ curl -o suspiciousdomains_$(date '+%Y-%m-%d').txt "https://isc.sans.edu/feeds/su
 
 # Parse them into a single list for easier use
 # Filename: blacklist-yyyy-mm-dd.csv
-python3 ~/mlcrawler6262/crawler/blacklist/blacklist_parser.py *.txt
+python3 ../../crawler/blacklist/blacklist_parser.py *.txt
 
 cd ..
