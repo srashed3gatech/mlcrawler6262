@@ -1,5 +1,6 @@
 import re
 import os
+import sys
 import urllib.request
 from datetime import datetime
 
@@ -18,14 +19,14 @@ REGEXES = {
 }
 
 # TODO: Add OpenPhish as source
-BLACKLIST_SOURCES = [
-    {'url': 'https://hosts-file.net/psh.txt', 'format': 'hosts', 'type': 'phish'},
-    {'url': 'https://hosts-file.net/exp.txt', 'format': 'hosts', 'type': 'exploit'},
-    {'url': 'https://hosts-file.net/emd.txt', 'format': 'hosts', 'type': 'malware'},
-    {'url': 'https://hosts-file.net/fsa.txt', 'format': 'hosts', 'type': 'fraud'},
-    {'url': 'http://mirror2.malwaredomains.com/files/domains.txt', 'format': 'malwaredomains', 'type': 'all'},
-    {'url': 'https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt', 'format': 'url', 'type': 'all'},
-]
+BLACKLIST_SOURCES = {
+    'psh': {'url': 'https://hosts-file.net/psh.txt', 'format': 'hosts', 'type': 'phish'},
+    'exp': {'url': 'https://hosts-file.net/exp.txt', 'format': 'hosts', 'type': 'exploit'},
+    'emd': {'url': 'https://hosts-file.net/emd.txt', 'format': 'hosts', 'type': 'malware'},
+    'fsa': {'url': 'https://hosts-file.net/fsa.txt', 'format': 'hosts', 'type': 'fraud'},
+    'domains': {'url': 'http://mirror2.malwaredomains.com/files/domains.txt', 'format': 'malwaredomains', 'type': 'all'},
+    'suspicious': {'url': 'https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt', 'format': 'url', 'type': 'all'},
+}
 
 DATE_FORMAT = '%Y-%m-%d'
 
@@ -88,28 +89,55 @@ class BlacklistParser:
 
         return result
 
+def dump_results(parser, source):
+    '''Given a parser, extract results, and write to globally defined output file.'''
+    # Dump results into TXT file (append)
+    with open(OUTPUT_FILE, 'a') as f:
+        for result in parser.results:
+            f.write('{0},{1}\n'.format(result['url'], result['type']))
+
+    print('- Completed source: {0}'.format(source))
+
 def main():
-    # Remove existing data.json
-    try:
+    # Remove today's file if it exists
+    if os.path.exists(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
-    except OSError:
-        pass
 
-    # Grab each of the blacklists and parse them
-    for source in BLACKLIST_SOURCES:
-        r = urllib.request.urlopen(source['url'])
-        lines = r.read().decode('utf-8').split('\n')
+    # Take local files in place of remote blacklist URLs
+    if len(sys.argv) > 1:
+        files = sys.argv[1:]
 
-        b = BlacklistParser(lines, source['format'], source['type'])
+        print('Starting local blacklist parser..')
+        print('Blacklist files: ' + ', '.join(files))
 
-        # Dump results into TXT file (append)
-        with open(OUTPUT_FILE, 'a') as f:
-            for result in b.results:
-                f.write('{0},{1}\n'.format(result['url'], result['type']))
+        sources = BLACKLIST_SOURCES.keys()
 
-        print('- Completed source: {0}'.format(source['url']))
+        for each in files:
+            # Read file lines for parsing
+            with open(each, 'r') as f:
+                lines = f.readlines()
 
-    print('- Results written to {0}'.format(OUTPUT_FILE))
+            # Find correct blacklist source for given file based on name
+            for s in sources:
+                if s in each:
+                    source = BLACKLIST_SOURCES[s]
+
+            parser = BlacklistParser(lines, source['format'], 'n/a')
+            dump_results(parser=parser, source=each)
+
+    # Otherwise, get remote blacklists
+    else:
+        print('Starting remote blacklist parser...')
+
+        # Grab each of the blacklists and parse them
+        for source in BLACKLIST_SOURCES.values():
+            r = urllib.request.urlopen(source['url'])
+            lines = r.read().decode('utf-8').split('\n')
+
+            b = BlacklistParser(lines, source['format'], source['type'])
+            dump_results(parser=b, source=source['url'])
+
+    print('Done! All results written to {0}.'.format(OUTPUT_FILE))
 
 if __name__ == '__main__':
     main()
