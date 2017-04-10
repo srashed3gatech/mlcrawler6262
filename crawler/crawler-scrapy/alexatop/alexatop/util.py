@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+import time
 import hashlib
 import requests
 
@@ -19,26 +20,25 @@ def get_today():
     date = datetime.now().replace(hour=0, second=0, minute=0)
     return format_date(datetime.now())
 
-def get_now():
-    pass
-
 def extract_url(url):
     p = urlparse(url)
     return p.netloc
 
-def grab_alexa(count=0,start_idx=0):
+def grab_alexa(count=0,start_idx=0,directory=''):
     '''Grabs Alexa top 1M list and returns it as a OrderedDict int (rank) -> str (url)'''
     # Grab ZIP and store on disk
     resp = requests.get(ALEXA_LIST_URL)
     archive = resp.content
 
-    with open('top1m.zip', 'wb') as f:
+    save_zip = os.path.join(directory, 'top1m-{0}.zip'.format(time.strftime('%Y-%m-%d'))
+
+    with open(save_zip), 'wb') as f:
         f.write(archive)
 
     data = []
 
     # Unzip, read, and parse CSV
-    with ZipFile('top1m.zip', 'r') as zf:
+    with ZipFile(save_zip, 'r') as zf:
         lines = [line.decode() for line in zf.open('top-1m.csv', 'r').readlines()]
 
         if count > 0:
@@ -49,9 +49,6 @@ def grab_alexa(count=0,start_idx=0):
         # Parse CSV and convert to dict format
         for row in csv.reader(lines):
             data.append('http://' + row[1])
-
-    # Clean up (delete .zip file)
-    os.remove('top1m.zip')
 
     return data
 

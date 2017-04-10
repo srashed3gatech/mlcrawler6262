@@ -1,4 +1,5 @@
 import os
+import time
 import subprocess
 
 from scrapy.utils.project import get_project_settings
@@ -13,8 +14,8 @@ CRAWL_NUM = int(100e3)
 URLS_DIR = os.path.join(os.getcwd(), 'urls')
 os.makedirs(URLS_DIR, exist_ok=True) # Create the folder
 
-# Grab Alexa top 1M
-sites = util.grab_alexa(ALEXA_MAX)
+# Grab Alexa top 1M and store .zip into URLS_DIR
+sites = util.grab_alexa(count=ALEXA_MAX, directory=URLS_DIR)
 
 for start in range(START_RANK-1, ALEXA_MAX, CRAWL_NUM):
     # Get start URLs for current run
