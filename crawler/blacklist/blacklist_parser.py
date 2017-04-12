@@ -125,7 +125,7 @@ def parse_blacklists(files, output_file=OUTPUT_FILE):
                 if s in each:
                     source = BLACKLIST_SOURCES[s]
 
-            parser = BlacklistParser(lines, source['format'], 'n/a')
+            parser = BlacklistParser(lines, source['format'], soure['type'])
 
             dump_results(parser=parser, path=each)
     else:
