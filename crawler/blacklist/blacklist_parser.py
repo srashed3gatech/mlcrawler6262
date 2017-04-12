@@ -89,24 +89,27 @@ class BlacklistParser:
 
         return result
 
-def dump_results(parser, source):
+def dump_results(parser, path):
     '''Given a parser, extract results, and write to globally defined output file.'''
     # Dump results into TXT file (append)
     with open(OUTPUT_FILE, 'a') as f:
         for result in parser.results:
             f.write('{0},{1}\n'.format(result['url'], result['type']))
 
-    print('- Completed source: {0}'.format(source))
+    print('- Completed source: {0}'.format(path))
 
-def main():
+def parse_blacklists(files, output_file=OUTPUT_FILE):
+    '''
+        Parses blacklists either local or remote.
+          * If len(files) > 0, local; else, remote
+
+        Writes results to output_file: string (defaults to OUTPUT_FILE)
+    '''
     # Remove today's file if it exists
     if os.path.exists(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
 
-    # Take local files in place of remote blacklist URLs
-    if len(sys.argv) > 1:
-        files = sys.argv[1:]
-
+    if len(files) > 0:
         print('Starting local blacklist parser..')
         print('Blacklist files: ' + ', '.join(files))
 
@@ -121,11 +124,10 @@ def main():
             for s in sources:
                 if s in each:
                     source = BLACKLIST_SOURCES[s]
-
+            
             parser = BlacklistParser(lines, source['format'], 'n/a')
-            dump_results(parser=parser, source=each)
 
-    # Otherwise, get remote blacklists
+            dump_results(parser=parser, path=each)
     else:
         print('Starting remote blacklist parser...')
 
@@ -134,10 +136,20 @@ def main():
             r = urllib.request.urlopen(source['url'])
             lines = r.read().decode('utf-8').split('\n')
 
-            b = BlacklistParser(lines, source['format'], source['type'])
-            dump_results(parser=b, source=source['url'])
+            parser = BlacklistParser(lines, source['format'], source['type'])
+
+            dump_results(parser=parser=, path=source['url'])
 
     print('Done! All results written to {0}.'.format(OUTPUT_FILE))
+
+def main():
+    files = []
+
+    # Take local files in place of remote blacklist URLs
+    if len(sys.argv) > 1:
+        files = sys.argv[1:]
+
+    parse_blacklists(files)
 
 if __name__ == '__main__':
     main()
