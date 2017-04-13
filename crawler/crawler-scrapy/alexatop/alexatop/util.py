@@ -32,7 +32,7 @@ def grab_alexa(count=0,start_idx=0,directory=''):
 
     save_zip = os.path.join(directory, 'top1m-{0}.zip'.format(time.strftime('%Y-%m-%d'))
 
-    with open(save_zip), 'wb') as f:
+    with open(save_zip, 'wb') as f:
         f.write(archive)
 
     data = []
