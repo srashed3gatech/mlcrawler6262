@@ -30,7 +30,7 @@ def grab_alexa(count=0,start_idx=0,directory=''):
     resp = requests.get(ALEXA_LIST_URL)
     archive = resp.content
 
-    save_zip = os.path.join(directory, 'top1m-{0}.zip'.format(time.strftime('%Y-%m-%d'))
+    save_zip = os.path.join(directory, 'top1m-{0}.zip'.format(time.strftime('%Y-%m-%d')))
 
     with open(save_zip, 'wb') as f:
         f.write(archive)
