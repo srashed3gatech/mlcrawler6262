@@ -62,7 +62,7 @@ def check_blacklist(day1, day2):
 
         with open(path, 'r') as f:
             # For each line, extract ONLY the URL
-            for line in f:
+            for i, line in enumerate(f):
                 try:
                     url = re.search(URL_REGEX, line).group(1)
 
@@ -71,7 +71,7 @@ def check_blacklist(day1, day2):
                     lookup.append(url)
                     crawled[url[:5]] = lookup
                 except:
-                    print('Error parsing ' + line)
+                    print('Error parsing line ' + str(i))
 
     # Check if any crawled URLs are in the blacklist
     for url in blacklist:
