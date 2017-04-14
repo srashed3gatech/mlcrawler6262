@@ -69,7 +69,7 @@ def build_lookup_table(day):
 
                 try:
                     # Extract URL using regex
-                    url = re.search(URL_REGEX, r['url']).group(3)
+                    url = re.search(URL_REGEX, r['url']).group(2)
 
                     # Store URL in lookup table
                     lookup = crawled.get(url[:5], [])
