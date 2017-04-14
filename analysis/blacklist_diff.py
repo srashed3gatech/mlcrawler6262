@@ -1,50 +1,84 @@
+import os
+import re
+import json
+import subprocess
+
 import pandas as pd
-import numpy as np
 
-def ComputeDelta(file1, file2):
-	#all_files = {file1, file2}
+DAYS_CRAWLED = (
+    '02-04-17',
+    '03-04-17',
+    '04-04-17',
+    '05-04-17',
+    '06-04-17',
+    '07-04-17',
+    '11-04-17',
+    '12-04-17',
+    '13-04-17',
+    '14-04-17',
+    '15-04-17',
+)
 
-	#df_from_each_file = (pd.read_csv(f) for f in all_files)
-	#concatenated_df   = pd.concat(df_from_each_file, ignore_index=True)
-	#print(concatenated_df)
+# Directory that contains crawled JSON lines from Scrapy
+# 10 files per day, each with results from 100k crawled URLs
+CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
+URL_REGEX = re.compile(r'"url":\s"http://(\S+)"')
 
-	#Read the two files and create two pandas objects
-	m1 = pd.read_csv(file1)
-	m2 = pd.read_csv(file2)
+# Data for blacklists by day
+BLACKLIST_DIR = '/nethome/srashed3/pbl_daily/'
+BLACKLIST_FILE = os.path.join(BLACKLIST_DIR, 'blacklist-{0}.csv')
 
+def blacklist_diff(day1, day2):
+    '''Given two days, returns blacklist URLs in day2 that were not found in day1.'''
+    f1 = BLACKLIST_FILE.format(day1)
+    f2 = BLACKLIST_FILE.format(day2)
 
-	#print(m1)
-	#print(m2)
+    d1 = pd.read_csv(f1, header=None)
+    d2 = pd.read_csv(f2, header=None)
 
-	# create a data frame by concating the two data frames
-	df = pd.concat([m1, m2])
-	df = df.reset_index(drop=True)
-	#print(df)
-	df_gpby = df.groupby(list(df.columns))
-	#Find the indexes for which the lines are repeated
-	idx = [x[0] for x in df_gpby.groups.values() if len(x) == 1]
-	#print(idx)
-	df.reindex(idx)
-	#print(df)
-	#Find the indewes that we should keep in our Output
-	indexes_list = []
-	for i in range(0,idx[len(idx)-1]):
-		if(i in idx):
-		 print('')
-		else:
-			#print('i DROP NUMBER ',i)
-			indexes_list.append(i)
-	#print('index_list' , indexes_list)
-	m=df.drop(indexes_list)
-	print(m)
+    # Compute intersection of blacklists
+    # True if d2_i in d1, False otherwise
+    inter = d2[0].isin(d1[0])
+    results = inter[inter == False]
 
-	#print(idx)
-	#difference_locations = np.where(m1 != m2)
-	#print(difference_locations)
+    return list(d2[0][results.keys()])
 
-	#changed_from = df1.values[difference_locations]
-	#print (changed_from)
+def check_blacklist(day1, day2):
+    '''Given two days, computes blacklist diff, then checks diff against day 2 URLs.'''
+    # Compute diff in blacklists
+    blacklist = blacklist_diff(day1, day2)
 
-	return m
-#Test with the name of the files
-toPanda("urls1.txt", "urls2.txt")
+    # Get all crawl JSON files for day 2
+    files = [each for each in os.listdir(CRAWL_DATA_DIR) if day2 in each]
+
+    # Extract URLs from crawled data for day 2
+
+    # Build a hash-based lookup table
+    # Key: first 5 chars of URL, Value: list of URLs
+    crawled = {}
+
+    for each in files:
+        with open(each, 'r') as f:
+            # For each line, extract ONLY the URL
+            for line in f:
+                try:
+                    url = re.search(URL_REGEX, line).group(1)
+
+                    # Store URL in lookup table
+                    lookup = crawled.get(url[:5], [])
+                    lookup.append(url)
+                    crawled[url[:5]] = lookup
+                except:
+                    print('Error parsing ' + line)
+
+    # Check if any crawled URLs are in the blacklist
+    for url in blacklist:
+        options = crawled[url[:5]]
+        if url in options:
+            print('Found: ' + url)
+
+def main():
+    check_blacklist('11-04-17', '12-04-17')
+
+if __name__ == '__main__':
+    main()
