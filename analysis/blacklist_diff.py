@@ -25,7 +25,7 @@ CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/da
 URL_REGEX = re.compile(r'"url":\s"http://(\S+)"')
 
 # Data for blacklists by day
-BLACKLIST_DIR = '/nethome/srashed3/pbl_daily/'
+BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
 BLACKLIST_FILE = os.path.join(BLACKLIST_DIR, 'blacklist-{0}.csv')
 
 def blacklist_diff(day1, day2):
