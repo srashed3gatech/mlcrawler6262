@@ -23,7 +23,15 @@ DAYS_CRAWLED = [
 # Directory that contains crawled JSON lines from Scrapy
 # 10 files per day, each with results from 100k crawled URLs
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
-URL_REGEX = re.compile(r'https?://(www\.)?([^/]+)')
+
+'''
+Extracts TLD info from URL
+  - Parses http(s) with and without www
+    - Parses >2 / as well!
+  - Skips any trailing paths
+  - Skips any escaped characters in the URL (e.g, %5C)
+'''
+URL_REGEX = re.compile(r'https?:[/]+(www\.)?([^/%\?]+)')
 
 # Data for blacklists by day
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
@@ -115,7 +123,7 @@ def check_blacklist(day1, day2):
         options = urls.get(url[:5], [])
 
         for pair in options:
-            if pair[0] in url:
+            if pair[0] == url:
                 print('Found: ' + url)
                 break
 
