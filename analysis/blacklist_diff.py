@@ -72,7 +72,7 @@ def check_blacklist(day1, day2):
 
                     # Store URL in lookup table
                     lookup = crawled.get(url[:5], [])
-                    lookup.append([url, r['alexa_rank'])
+                    lookup.append([url, r['alexa_rank']])
                     crawled[url[:5]] = lookup
                 except:
                     # Skip any malformed URLs
