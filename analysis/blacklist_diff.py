@@ -29,6 +29,9 @@ URL_REGEX = re.compile(r'https?://(www\.)?(\S+)(/|$)')
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
 BLACKLIST_FILE = os.path.join(BLACKLIST_DIR, 'blacklist-{0}.csv')
 
+# Location of lookup table pickle for day {0}
+LOOKUP_TABLE = '/home/crawler/mlcrawler6262/analysis/urls-{0}'
+
 def blacklist_diff(day1, day2):
     '''Given two days, returns blacklist URLs in day2 that were not found in day1.'''
     f1 = BLACKLIST_FILE.format(day1)
@@ -44,13 +47,10 @@ def blacklist_diff(day1, day2):
 
     return list(d2[0][results.keys()])
 
-def check_blacklist(day1, day2):
-    '''Given two days, computes blacklist diff, then checks diff against day 2 URLs.'''
-    # Compute diff in blacklists
-    blacklist = blacklist_diff(day1, day2)
-
-    # Get all crawl JSON files for day 2
-    files = [each for each in os.listdir(CRAWL_DATA_DIR) if day2 in each]
+def build_lookup_table(day):
+    '''Given a day, extract all crawled URLs from the day and store in a pickle.'''
+    # Get all crawl JSON files for day
+    files = [each for each in os.listdir(CRAWL_DATA_DIR) if day in each]
 
     # Extract URLs from crawled data for day 2
 
@@ -81,13 +81,32 @@ def check_blacklist(day1, day2):
         print('Completed file ' + str(i+1))
 
     # Save lookup table for later use
-    with open('urls-{0}'.format(day2), 'wb') as f:
+    with open(LOOKUP_TABLE.format(day), 'wb') as f:
         pickle.dump(crawled, f)
+
+    return crawled
+
+def check_blacklist(day1, day2):
+    '''Given two days, computes blacklist diff, then checks diff against day 2 URLs.'''
+    # Compute diff in blacklists
+    blacklist = blacklist_diff(day1, day2)
+
+    # Retrieve URL lookup table for day 2
+    path = LOOKUP_TABLE.format(day2)
+
+    if os.path.exists(path):
+        # Read pickle if lookup table exists
+        with open(path, 'rb') as f:
+            urls = pickle.load(f)
+    else:
+        # Build table from scratch (takes time!)
+        urls = build_lookup_table(day2)
 
     # Check if any crawled URLs are in the blacklist
     for url in blacklist:
-        options = crawled[url[:5]]
-        if url in options:
+        options = urls.get(url[:5], None)
+
+        if options and url in options:
             print('Found: ' + url)
 
 def main():
