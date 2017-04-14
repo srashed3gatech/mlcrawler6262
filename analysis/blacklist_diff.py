@@ -6,7 +6,7 @@ import subprocess
 
 import pandas as pd
 
-DAYS_CRAWLED = (
+DAYS_CRAWLED = [
     '02-04-17',
     '03-04-17',
     '04-04-17',
@@ -18,7 +18,7 @@ DAYS_CRAWLED = (
     '13-04-17',
     '14-04-17',
     '15-04-17',
-)
+]
 
 # Directory that contains crawled JSON lines from Scrapy
 # 10 files per day, each with results from 100k crawled URLs
@@ -67,19 +67,20 @@ def check_blacklist(day1, day2):
                 r = json.loads(line, encoding='utf-8')
 
                 try:
+                    # Extract URL using regex
                     url = re.search(URL_REGEX, r['url']).group(3)
+
+                    # Store URL in lookup table
+                    lookup = crawled.get(url[:5], [])
+                    lookup.append([url, r['alexa_rank'])
+                    crawled[url[:5]] = lookup
                 except:
                     # Skip any malformed URLs
                     print(r['url'])
 
-                # Store URL in lookup table
-                lookup = crawled.get(url[:5], [])
-                lookup.append(url)
-                crawled[url[:5]] = lookup
-
         print('Completed file ' + str(i+1))
 
-    # Save lookup table for later use!
+    # Save lookup table for later use
     with open('urls-{0}'.format(day2), 'wb') as f:
         pickle.dump(crawled, f)
 
@@ -90,7 +91,7 @@ def check_blacklist(day1, day2):
             print('Found: ' + url)
 
 def main():
-    check_blacklist('11-04-17', '12-04-17')
+    check_blacklist('12-04-17', '13-04-17')
 
 if __name__ == '__main__':
     main()
