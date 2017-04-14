@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import pickle
 import subprocess
 
 import pandas as pd
@@ -64,8 +65,12 @@ def check_blacklist(day1, day2):
             # Parse each line into JSON object
             for line in f:
                 r = json.loads(line, encoding='utf-8')
-                print(r['url'])
-                url = re.search(URL_REGEX, r['url']).group(3)
+
+                try:
+                    url = re.search(URL_REGEX, r['url']).group(3)
+                except:
+                    # Skip any malformed URLs
+                    print(r['url'])
 
                 # Store URL in lookup table
                 lookup = crawled.get(url[:5], [])
@@ -73,6 +78,10 @@ def check_blacklist(day1, day2):
                 crawled[url[:5]] = lookup
 
         print('Completed file ' + str(i+1))
+
+    # Save lookup table for later use!
+    with open('urls-{0}'.format(day2), 'wb') as f:
+        pickle.dump(crawled, f)
 
     # Check if any crawled URLs are in the blacklist
     for url in blacklist:
