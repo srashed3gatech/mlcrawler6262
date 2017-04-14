@@ -22,7 +22,7 @@ DAYS_CRAWLED = (
 # Directory that contains crawled JSON lines from Scrapy
 # 10 files per day, each with results from 100k crawled URLs
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
-URL_REGEX = re.compile(r'http://(www.)?(\S+)/')
+URL_REGEX = re.compile(r'https?://(www.)?(\S+)/')
 
 # Data for blacklists by day
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
