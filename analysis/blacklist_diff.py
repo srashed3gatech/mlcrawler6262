@@ -28,6 +28,7 @@ URL_REGEX = re.compile(r'https?://(www\.)?(\S+)(/|$)')
 # Data for blacklists by day
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
 BLACKLIST_FILE = os.path.join(BLACKLIST_DIR, 'blacklist-{0}.csv')
+BLACKLIST_REGEX = re.compile(r'(www.)?(\S+)')
 
 # Location of lookup table pickle for day {0}
 LOOKUP_TABLE = '/home/crawler/mlcrawler6262/analysis/urls-{0}'
@@ -103,7 +104,9 @@ def check_blacklist(day1, day2):
         urls = build_lookup_table(day2)
 
     # Check if any crawled URLs are in the blacklist
-    for url in blacklist:
+    for each in blacklist:
+        # Extract correct URL format
+        url = re.search(BLACKLIST_REGEX, each).group(2)
         options = urls.get(url[:5], None)
 
         if options and url in options:
