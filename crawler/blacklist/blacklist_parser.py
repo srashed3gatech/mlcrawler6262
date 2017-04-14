@@ -28,7 +28,9 @@ BLACKLIST_SOURCES = {
     'suspicious': {'url': 'https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt', 'format': 'url', 'type': 'all'},
 }
 
-DATE_FORMAT = '%Y-%m-%d'
+DATE_REGEX = re.compile(r'\S+_(\d\d-\d\d-\d\d).txt')
+
+DATE_FORMAT = '%d-%m-%y'
 
 def format_date(dt, fmt=DATE_FORMAT):
     return datetime.strftime(dt, fmt)
@@ -89,16 +91,16 @@ class BlacklistParser:
 
         return result
 
-def dump_results(parser, path):
+def dump_results(parser, path, output_file):
     '''Given a parser, extract results, and write to globally defined output file.'''
     # Dump results into TXT file (append)
-    with open(OUTPUT_FILE, 'a') as f:
+    with open(output_file, 'a') as f:
         for result in parser.results:
             f.write('{0},{1}\n'.format(result['url'], result['type']))
 
     print('- Completed source: {0}'.format(path))
 
-def parse_blacklists(files, output_file=OUTPUT_FILE):
+def parse_blacklists(files, output_file):
     '''
         Parses blacklists either local or remote.
           * If len(files) > 0, local; else, remote
@@ -109,7 +111,7 @@ def parse_blacklists(files, output_file=OUTPUT_FILE):
     if os.path.exists(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
 
-    if len(files) > 0:
+    if files != None:
         print('Starting local blacklist parser..')
         print('Blacklist files: ' + ', '.join(files))
 
@@ -127,7 +129,7 @@ def parse_blacklists(files, output_file=OUTPUT_FILE):
 
             parser = BlacklistParser(lines, source['format'], source['type'])
 
-            dump_results(parser=parser, path=each)
+            dump_results(parser=parser, path=each, output_file=output_file)
     else:
         print('Starting remote blacklist parser...')
 
@@ -138,18 +140,24 @@ def parse_blacklists(files, output_file=OUTPUT_FILE):
 
             parser = BlacklistParser(lines, source['format'], source['type'])
 
-            dump_results(parser=parser, path=source['url'])
+            dump_results(parser=parser, path=source['url'], output_file=output_file)
 
-    print('Done! All results written to {0}.'.format(OUTPUT_FILE))
+    print('Done! All results written to {0}.'.format(output_file))
 
 def main():
-    files = []
+    files = None
 
     # Take local files in place of remote blacklist URLs
     if len(sys.argv) > 1:
         files = sys.argv[1:]
 
-    parse_blacklists(files)
+        # Extract date from file name
+        date = re.search(DATE_REGEX, files[0]).group(1)
+        output_file = 'blacklist-{0}.csv'.format(date)
+
+        parse_blacklists(files, output_file)
+    else:
+        parse_blacklists(files, OUTPUT_FILE)
 
 if __name__ == '__main__':
     main()
