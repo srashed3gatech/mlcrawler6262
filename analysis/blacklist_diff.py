@@ -61,17 +61,17 @@ def check_blacklist(day1, day2):
         path = os.path.join(CRAWL_DATA_DIR, each)
 
         with open(path, 'r') as f:
-            # For each line, extract ONLY the URL
-            for i, line in enumerate(f):
-                try:
-                    url = re.search(URL_REGEX, line).group(1)
+            # Parse each line into JSON object
+            for line in f:
+                r = json.loads(line, encoding='utf-8')
+                url = r['url']
 
-                    # Store URL in lookup table
-                    lookup = crawled.get(url[:5], [])
-                    lookup.append(url)
-                    crawled[url[:5]] = lookup
-                except:
-                    print('Error parsing line ' + str(i))
+                # Store URL in lookup table
+                lookup = crawled.get(url[:5], [])
+                lookup.append(url)
+                crawled[url[:5]] = lookup
+
+                print('Parsed ' + url)
 
     # Check if any crawled URLs are in the blacklist
     for url in blacklist:
