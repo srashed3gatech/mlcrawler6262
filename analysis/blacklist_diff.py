@@ -58,7 +58,9 @@ def check_blacklist(day1, day2):
     crawled = {}
 
     for each in files:
-        with open(each, 'r') as f:
+        path = os.path.join(CRAWL_DATA_DIR, each)
+
+        with open(path, 'r') as f:
             # For each line, extract ONLY the URL
             for line in f:
                 try:
