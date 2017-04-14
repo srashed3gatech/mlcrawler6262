@@ -64,6 +64,7 @@ def check_blacklist(day1, day2):
             # Parse each line into JSON object
             for line in f:
                 r = json.loads(line, encoding='utf-8')
+                print(r['url'])
                 url = re.search(URL_REGEX, r['url']).group(3)
 
                 # Store URL in lookup table
