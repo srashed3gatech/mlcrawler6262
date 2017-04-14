@@ -109,8 +109,10 @@ def check_blacklist(day1, day2):
         url = re.search(BLACKLIST_REGEX, each).group(2)
         options = urls.get(url[:5], None)
 
-        if options and url in options:
-            print('Found: ' + url)
+        if options:
+            for u in options:
+                if url in u:
+                    print('Found: ' + url)
 
 def main():
     check_blacklist('12-04-17', '13-04-17')
