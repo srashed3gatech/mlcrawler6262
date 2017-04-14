@@ -107,12 +107,15 @@ def check_blacklist(day1, day2):
     for each in blacklist:
         # Extract correct URL format
         url = re.search(BLACKLIST_REGEX, each).group(2)
-        options = urls.get(url[:5], None)
 
-        if options:
-            for u in options:
-                if url in u:
-                    print('Found: ' + url)
+        # Perform lookup in crawled URLs
+        # Returns: [[<url>, <rank>], [<url>, <rank>], ...]
+        options = urls.get(url[:5], [])
+
+        for pair in options:
+            if pair[0] in url:
+                print('Found: ' + url)
+                break
 
 def main():
     check_blacklist('12-04-17', '13-04-17')
