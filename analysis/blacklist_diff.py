@@ -23,7 +23,7 @@ DAYS_CRAWLED = [
 # Directory that contains crawled JSON lines from Scrapy
 # 10 files per day, each with results from 100k crawled URLs
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
-URL_REGEX = re.compile(r'https?://(www\.)?(\S+)(/|$)')
+URL_REGEX = re.compile(r'https?://(www\.)?([^/]+)')
 
 # Data for blacklists by day
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
@@ -72,6 +72,8 @@ def build_lookup_table(day):
                     url = re.search(URL_REGEX, r['url']).group(2)
 
                     # Store URL in lookup table
+                    # Note: table WILL have dupes (e.g., YouTube)
+                    # Kept them to maintain rank data
                     lookup = crawled.get(url[:5], [])
                     lookup.append([url, r['alexa_rank']])
                     crawled[url[:5]] = lookup
