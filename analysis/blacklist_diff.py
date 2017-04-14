@@ -124,7 +124,7 @@ def check_blacklist(day1, day2):
 
         for pair in options:
             if pair[0] == url:
-                print('Found: ' + url)
+                print('Blacklist hit {0} at rank {1}'.format(url, pair[1]))
                 break
 
 def main():
