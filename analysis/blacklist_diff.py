@@ -22,7 +22,7 @@ DAYS_CRAWLED = (
 # Directory that contains crawled JSON lines from Scrapy
 # 10 files per day, each with results from 100k crawled URLs
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
-URL_REGEX = re.compile(r'http://(\S+)/')
+URL_REGEX = re.compile(r'http://(www.)?(\S+)/')
 
 # Data for blacklists by day
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
@@ -57,21 +57,21 @@ def check_blacklist(day1, day2):
     # Key: first 5 chars of URL, Value: list of URLs
     crawled = {}
 
-    for each in files:
+    for i, each in enumerate(files):
         path = os.path.join(CRAWL_DATA_DIR, each)
 
         with open(path, 'r') as f:
             # Parse each line into JSON object
             for line in f:
                 r = json.loads(line, encoding='utf-8')
-                url = re.search(URL_REGEX, r['url']).group(1)
+                url = re.search(URL_REGEX, r['url']).group(2)
 
                 # Store URL in lookup table
                 lookup = crawled.get(url[:5], [])
                 lookup.append(url)
                 crawled[url[:5]] = lookup
 
-                print('Parsed ' + url)
+        print('Completed file ' + str(i+1))
 
     # Check if any crawled URLs are in the blacklist
     for url in blacklist:
