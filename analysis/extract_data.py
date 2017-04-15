@@ -14,7 +14,7 @@ from blacklist_check import parse_url, BLACKLIST_FILE
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
 
 OUTPUT_DIR = 'output'
-os.mkdir(OUTPUT_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def load_blacklist(day):
     '''Load URL blacklist for a given day. Return: lookup table of first 5 chars of URL.'''
@@ -34,7 +34,7 @@ def grab_data(day, n):
     data = []
 
     # Grab first file crawled for the day (top 100k)
-    path = [each for each in os.listdir(CRAWL_DATA_DIR) if day in each][0]
+    path = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each][0]
 
     i = 0
 
@@ -69,8 +69,8 @@ def parse_data(data, blacklist):
         d['url'] = url = parse_url(result['url'])
 
         # Parse raw_html into BS object
-        page = BeautifulSoup(result['raw_html'], 'lxml')
-        d['page_size'] = len(result['raw_html'])
+        page = BeautifulSoup(result['full_html'], 'lxml')
+        d['page_size'] = len(result['full_html'])
 
         # Get number of words
         body = page.select('body')[0]
@@ -83,10 +83,18 @@ def parse_data(data, blacklist):
         d['alexa_rank'] = result['alexa_rank']
 
         d['num_urls'] = len(result['urls'])
-        d['avg_url_length'] = sum([len(url) for url in result['urls']]) / float(d['num_urls'])
+
+        if d['num_urls'] > 0:
+            d['avg_url_length'] = sum([len(url) for url in result['urls']]) / float(d['num_urls'])
+        else:
+            d['avg_url_length'] = 0
 
         d['num_js_urls'] = len(result['js_urls'])
-        d['avg_js_url_length'] = sum([len(url) for url in result['js_urls']]) / float(d['num_js_urls'])
+
+        if d['num_js_urls'] > 0:
+            d['avg_js_url_length'] = sum([len(url) for url in result['js_urls']]) / float(d['num_js_urls'])
+        else:
+            d['avg_js_url_length'] = 0
 
         # TODO: look at headers!
         d['latency'] = result['latency']
@@ -97,8 +105,12 @@ def parse_data(data, blacklist):
         d['urls_hash'] = result['urls_hash']
         d['body_hash'] = result['body_hash']
 
-        d['title'] = result['title']
-        d['title_length'] = len(result['title'])
+        d['title'] = result['title'].strip()
+
+        if d['title']:
+            d['title_length'] = len(result['title'])
+        else:
+            d['title_length'] = 0
 
         d['blacklisted'] = False
 
