@@ -41,6 +41,9 @@ BLACKLIST_REGEX = re.compile(r'(www.)?(\S+)')
 # Location of lookup table pickle for day {0}
 LOOKUP_TABLE = '/home/crawler/mlcrawler6262/analysis/urls-{0}'
 
+def parse_url(url, p=URL_REGEX):
+    return re.search(p, url).group(2)
+
 def blacklist_diff(day1, day2):
     '''Given two days, returns blacklist URLs in day2 that were not found in day1.'''
     f1 = BLACKLIST_FILE.format(day1)
