@@ -153,8 +153,13 @@ def main():
 
         # Extract date from file name
         date = re.search(DATE_REGEX, files[0]).group(1)
-        converted = datetime.strptime(date, '%y-%m-%d')
-        output_file = 'blacklist-{0}.csv'.format(format_date(converted))
+
+        try:
+            converted = datetime.strptime(date, '%y-%m-%d')
+            output_file = 'blacklist-{0}.csv'.format(format_date(converted))
+        except:
+            # If already in correct format (i.e., dd-mm-yy)
+            output_file = 'blacklist-{0}.csv'.format(date)
 
         parse_blacklists(files, output_file)
     else:
