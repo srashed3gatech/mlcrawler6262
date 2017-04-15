@@ -101,6 +101,8 @@ def check_blacklist(day1, day2):
     '''Given two days, computes blacklist diff, then checks diff against day 2 URLs.'''
     # Compute diff in blacklists
     blacklist = blacklist_diff(day1, day2)
+    # path = BLACKLIST_FILE.format(day2)
+    # blacklist = list(pd.read_csv(path, header=None)[0])
 
     # Retrieve URL lookup table for day 2
     path = LOOKUP_TABLE.format(day2)
