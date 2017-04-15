@@ -8,6 +8,7 @@ import os
 import json
 import pysolr
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 from blacklist_check import parse_url, BLACKLIST_FILE
 
@@ -15,6 +16,12 @@ CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/da
 
 OUTPUT_DIR = 'output'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+SOLR_CORE_URL = 'http://localhost:8983/solr/search/'
+SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+
+def format_date(dt, fmt=SOLR_DATE_FORMAT):
+    return datetime.strftime(dt, fmt)
 
 def load_blacklist(day):
     '''Load URL blacklist for a given day. Return: lookup table of first 5 chars of URL.'''
@@ -53,20 +60,24 @@ def grab_data(day, n):
 
     return data
 
-def parse_data(data, blacklist):
+def parse_data(day, data):
     '''Parse data samples into a summarized format with information of interest.'''
-    # Extract:
-    # page size (bytes), num images, num JS urls, avg. JS url length, num URLs
-    # avg. URL length, num words in <body>, resp. time, header length, num DOM elems
-    # blacklisted, Alexa rank
+    # Grab blacklist for current day
+    blacklist = load_blacklist(day)
 
+    # Stores final parsed data
     parsed = []
+
+    # Reformat date into Solr standard format for querying
+    date_solr = format_date(datetime.strptime(day, '%d-%m-%y'))
 
     for result in data:
         # Object to store fields required
         d = {}
 
+        # Store parsed URL and date
         d['url'] = url = parse_url(result['url'])
+        d['date'] = date_solr
 
         # Parse raw_html into BS object
         page = BeautifulSoup(result['full_html'], 'lxml')
@@ -98,16 +109,15 @@ def parse_data(data, blacklist):
 
         # TODO: look at headers!
         d['latency'] = result['latency']
-        d['headers'] = json.loads(result['headers'])
+        # d['headers'] = json.loads(result['headers'])
         d['headers_length'] = len(result['headers'])
 
         d['head_hash'] = result['head_hash']
         d['urls_hash'] = result['urls_hash']
         d['body_hash'] = result['body_hash']
 
-        d['title'] = result['title'].strip()
-
-        if d['title']:
+        if result['title']:
+            d['title'] = result['title'].strip()
             d['title_length'] = len(result['title'])
         else:
             d['title_length'] = 0
@@ -123,20 +133,28 @@ def parse_data(data, blacklist):
 
     return parsed
 
-def extract_data(day, n=1000):
-    output_file = os.path.join(OUTPUT_DIR, 'output-{0}.json'.format(day))
-
+def extract_data(day, n=1000, solr=False):
     data = grab_data(day, n)
-    blacklist = load_blacklist(day)
-    parsed = parse_data(data, blacklist)
+    parsed = parse_data(day, data)
 
-    with open(output_file, 'w') as f:
-        json.dump(parsed, f)
+    if not solr:
+        # Write to JSON file
+        output_file = os.path.join(OUTPUT_DIR, 'output-{0}.json'.format(day))
 
-    print('Data written to: ' + output_file)
+        with open(output_file, 'w') as f:
+            json.dump(parsed, f)
+
+        print('Data written to: ' + output_file)
+    else:
+        # Insert directly into Solr core `search`
+        core = pysolr.Solr(SOLR_CORE_URL, timeout=10)
+        core.add(parsed)
+
+        print('Data inserted into: ' + SOLR_CORE_URL)
 
 def main():
-    extract_data('13-04-17', n=100)
+    extract_data('13-04-17', n=1000, solr=False)
+    extract_data('12-04-17', n=1000, solr=False)
 
 if __name__ == '__main__':
     main()
