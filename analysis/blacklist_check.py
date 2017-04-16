@@ -8,7 +8,7 @@ import pandas as pd
 
 DAYS_CRAWLED = [
     '04-04-17',
-    '05-04-17',
+#    '05-04-17',
     '06-04-17',
     '07-04-17',
     '11-04-17',
@@ -79,6 +79,10 @@ def build_lookup_table(day):
 
         Return: True on success, False on failure
     '''
+    # If already exists, return
+    if os.path.exists(LOOKUP_TABLE.format(day)):
+        return True
+
     # Get all crawl JSON files for day
     files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
@@ -168,13 +172,16 @@ def check_blacklist(day1, day2):
 def main():
     # check_blacklist('12-04-17', '13-04-17')
 
-    for day in DAYS_CRAWLED[::-1]:
-        status = build_lookup_table(day)
+    # Start from most recent data backwards
+    days = DAYS_CRAWLED[::-1]
 
-        if not status:
-            print('Failed to build table for ' + day)
-        else:
-            print('Completed ' + day)
+    for i, day in enumerate(days):
+        if i == len(DAYS_CRAWLED)-1:
+            break
+
+        day1, day2 = days[i+1], day
+
+        check_blacklist(day1, day2)
 
 if __name__ == '__main__':
     main()
