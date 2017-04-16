@@ -7,8 +7,6 @@ import subprocess
 import pandas as pd
 
 DAYS_CRAWLED = [
-    '02-04-17',
-    '03-04-17',
     '04-04-17',
     '05-04-17',
     '06-04-17',
@@ -18,11 +16,16 @@ DAYS_CRAWLED = [
     '13-04-17',
     '14-04-17',
     '15-04-17',
+    # '16-04-17',
 ]
 
 # Directory that contains crawled JSON lines from Scrapy
 # 10 files per day, each with results from 100k crawled URLs
-CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
+CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data'
+
+# Number of Alexa URLs per data file
+RANK_DELTA = 100000
+RANK_MAX = 1000000
 
 '''
 Extracts TLD info from URL
@@ -39,7 +42,9 @@ BLACKLIST_FILE = os.path.join(BLACKLIST_DIR, 'blacklist-{0}.csv')
 BLACKLIST_REGEX = re.compile(r'(www.)?(\S+)')
 
 # Location of lookup table pickle for day {0}
-LOOKUP_TABLE = '/home/crawler/mlcrawler6262/analysis/urls-{0}'
+LOOKUP_DIR = '/home/crawler/mlcrawler6262/analysis/lookup'
+os.makedirs(LOOKUP_DIR, exist_ok=True)
+LOOKUP_TABLE = os.path.join(LOOKUP_DIR, 'urls-{0}')
 
 def parse_url(url, p=URL_REGEX):
     return re.search(p, url).group(2)
@@ -59,10 +64,26 @@ def blacklist_diff(day1, day2):
 
     return list(d2[0][results.keys()])
 
+def load_lookup_table(day):
+    path = LOOKUP_TABLE.format(day)
+
+    if os.path.exists(path):
+        with open(path, 'rb') as f:
+            urls = pickle.load(f)
+    else:
+        return None
+
 def build_lookup_table(day):
-    '''Given a day, extract all crawled URLs from the day and store in a pickle.'''
+    '''
+        Given a day, extract all crawled URLs from the day and store in a pickle.
+
+        Return: True on success, False on failure
+    '''
     # Get all crawl JSON files for day
     files = [each for each in os.listdir(CRAWL_DATA_DIR) if day in each]
+
+    if len(files) > RANK_MAX / RANK_DELTA:
+        return False
 
     # Extract URLs from crawled data for day 2
 
@@ -70,12 +91,15 @@ def build_lookup_table(day):
     # Key: first 5 chars of URL, Value: list of URLs
     crawled = {}
 
+    # Track rank offset of current data file
+    rank_offset = 0
+
     for i, each in enumerate(files):
         path = os.path.join(CRAWL_DATA_DIR, each)
 
         with open(path, 'r') as f:
-            # Parse each line into JSON object
             for line in f:
+                # Parse each line into a JSON object
                 r = json.loads(line, encoding='utf-8')
 
                 try:
@@ -86,11 +110,13 @@ def build_lookup_table(day):
                     # Note: table WILL have dupes (e.g., YouTube)
                     # Kept them to maintain rank data
                     lookup = crawled.get(url[:5], [])
-                    lookup.append([url, r['alexa_rank']])
+                    lookup.append([url, r['alexa_rank'] + rank_offset])
                     crawled[url[:5]] = lookup
                 except:
-                    # Skip any malformed URLs
-                    print(r['url'])
+                    # Skips malformed URLs
+                    pass
+
+        rank_offset += RANK_DELTA
 
         print('Completed file ' + str(i+1))
 
@@ -98,7 +124,7 @@ def build_lookup_table(day):
     with open(LOOKUP_TABLE.format(day), 'wb') as f:
         pickle.dump(crawled, f)
 
-    return crawled
+    return True
 
 def check_blacklist(day1, day2):
     '''Given two days, computes blacklist diff, then checks diff against day 2 URLs.'''
@@ -110,15 +136,19 @@ def check_blacklist(day1, day2):
     # Retrieve URL lookup table for day 2
     path = LOOKUP_TABLE.format(day2)
 
-    if os.path.exists(path):
-        # Read pickle if lookup table exists
-        with open(path, 'rb') as f:
-            urls = pickle.load(f)
-    else:
-        # Build table from scratch (takes time!)
-        urls = build_lookup_table(day2)
+    # Build table from scratch if doesn't exist (takes time!)
+    if not os.path.exists(path):
+        status = build_lookup_table(day2):
+        if not status:
+            print('URL lookup failed!')
+            return
 
-    # Check if any crawled URLs are in the blacklist
+    # Load lookup table from disk
+    urls = load_lookup_table(day2)
+
+    blacklisted = []
+
+    # Check for blacklist hits
     for each in blacklist:
         # Extract correct URL format
         url = re.search(BLACKLIST_REGEX, each).group(2)
@@ -129,11 +159,22 @@ def check_blacklist(day1, day2):
 
         for pair in options:
             if pair[0] == url:
-                print('Blacklist hit {0} at rank {1}'.format(url, pair[1]))
+                blacklisted.append((url, rank))
                 break
 
+    for url, rank in blacklisted:
+        print('Found: {0} at rank {1}'.format(url, rank))
+
 def main():
-    check_blacklist('12-04-17', '13-04-17')
+    # check_blacklist('12-04-17', '13-04-17')
+
+    for day in DAYS_CRAWLED:
+        status = build_lookup_table(day)
+
+        if not status:
+            print('Failed to build table for ' + day)
+        else:
+            print('Completed ' + day)
 
 if __name__ == '__main__':
     main()
