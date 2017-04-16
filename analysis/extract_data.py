@@ -187,12 +187,17 @@ def grab_rank_range(day, n=1, m=1000):
     return data
 
 def parse_data(day, data, blacklisted=False):
-    '''Parse data samples into a summarized format with features of interest.'''
+    '''
+        Parse data samples into a summarized format with features of interest.
+
+        Arguments
+            - day: day, in dd-mm-yy format
+            - data: list of dicts of crawl data to parse
+    '''
     # Grab blacklist for current day
     if not blacklisted:
         blacklist = load_blacklist(day)
 
-    # Stores final parsed data
     parsed = []
 
     # Reformat date into Solr standard format for querying
@@ -216,7 +221,7 @@ def parse_data(day, data, blacklisted=False):
             d['blacklisted'] = False
 
             # Perform blacklist lookup
-            for u, _ in blacklist:
+            for u in blacklist:
                 if url == u:
                     d['blacklisted'] = True
                     break
@@ -271,26 +276,19 @@ def parse_data(day, data, blacklisted=False):
 
         parsed.append(d)
 
-    return parsed
-
-def extract_data(day, n=1, m=1000, solr=False):
+def extract_data(day, n=1, m=1000):
+    print('Grabbing data from rank {0} to rank {1}.'.format(n, m))
     data = grab_rank_range(day, n, m)
+
+    print('Parsing the data...')
     parsed = parse_data(day, data)
 
-    if not solr:
-        # Write to JSON file
-        output_file = os.path.join(OUTPUT_DIR, 'output-{0}-{1}-{2}.json'.format(day, n, m))
+    # Parse and write data to JSON file
+    output_file = os.path.join(OUTPUT_DIR, 'output-{0}-{1}-{2}.json'.format(day, n, m))
+    with open(output_file, 'w') as f:
+        json.dump(parsed, f)
 
-        with open(output_file, 'w') as f:
-            json.dump(parsed, f)
-
-        print('Data written to: ' + output_file)
-    else:
-        # Insert directly into Solr core `search`
-        core = pysolr.Solr(SOLR_CORE_URL, timeout=10)
-        core.add(parsed)
-
-        print('Data inserted into: ' + SOLR_CORE_URL)
+    print('Data written to: ' + output_file)
 
 def extract_blacklist_data(day):
     # Find which crawled URLs are in the blacklist for given day
