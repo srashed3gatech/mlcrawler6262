@@ -128,7 +128,7 @@ class LookupTable:
     def dump(self):
         '''Dumps lookup table to disk.'''
         with open(self.path, 'wb') as f:
-            pickle.dump(f)
+            pickle.dump(self.table, f)
 
     def load(self):
         '''Loads lookup table from disk.'''
@@ -166,7 +166,7 @@ class CrawlIndex:
 
     def dump(self):
         with open(self.path, 'wb') as f:
-            pickle.dump(f)
+            pickle.dump(self.index, f)
 
     def load(self):
         '''Loads index from disk.'''
