@@ -27,8 +27,8 @@ for start in range(START_RANK-1, ALEXA_MAX, CRAWL_NUM):
         f.write(start_urls)
 
     # Start the spider and block until completed
-    # Pass path to current file
-    crawl_args = 'urls_file={0}'.format(url_file)
+    # Pass path to current file and current Alexa rank offset
+    crawl_args = '-a urls_file={0} -a offset={1}'.format(url_file, start+1)
     subprocess.call(['scrapy', 'crawl', '-a', crawl_args, 'alexa'])
 
     # Delete the URLs file
