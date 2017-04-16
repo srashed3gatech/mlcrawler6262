@@ -180,7 +180,7 @@ def grab_rank_range(day, n=1, m=1000):
                     if n <= r['alexa_rank'] <= m:
                         data.append(r)
                         last_found = 0
-                    else:
+                    elif r['alexa_rank'] >= n:
                         last_found += 1
             break
 
