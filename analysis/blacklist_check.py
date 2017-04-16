@@ -3,6 +3,7 @@ import re
 import json
 import pickle
 import subprocess
+from collections import OrderedDict
 
 import pandas as pd
 
@@ -49,6 +50,52 @@ LOOKUP_TABLE = os.path.join(LOOKUP_DIR, 'urls-{0}')
 CRAWL_INDEX_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawl_index'
 os.makedirs(CRAWL_INDEX_DIR, exist_ok=True)
 CRAWL_INDEX_PATH = os.path.join(CRAWL_INDEX_DIR, 'index-{0}')
+
+CRAWL_STATS_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/stats'
+os.makedirs(CRAWL_STATS_DIR, exist_ok=True)
+CRAWL_STATS_PATH = os.path.join(CRAWL_STATS_DIR, 'stats-{0}')
+
+class StatsCollector:
+    '''
+        Collects statistics on crawled data for a given day.
+    '''
+    def __init__(self, day):
+        self.day = day
+        self.path = CRAWL_STATS_PATH.format(day)
+        self.stats = OrderedDict([
+            ('total_crawled', 0),
+            ('dns_fail', 0),
+            ('http_fail', 0),
+            ('http_timeout', 0),
+            ('other_fail', 0),
+            ('total_error', 0),
+            ('total_ok', 0),
+        ])
+
+    def update(self, crawl_status):
+        self.stats['total_crawled'] += 1
+
+        if crawl_status == 'DNSLookupError':
+            self.stats['dns_fail'] += 1
+        elif crawl_status == 'HTTPError':
+            self.stats['http_fail'] += 1
+        elif 'TimeoutError' in crawl_status:
+            self.stats['http_timeout'] += 1
+        elif crawl_status == 'OK':
+            self.stats['total_ok'] += 1
+        else:
+            self.stats['other_fail'] += 1
+
+    def dump(self):
+        with open(self.path, 'w') as f:
+            # CSV header row
+            f.write('{0}\n'.format(','.join(self.stats.keys())))
+
+            # Stats for file
+            self.stats['total_error'] = self.stats['dns_fail'] + self.stats['http_fail'] + \
+                                        self.stats['http_timeout'] + self.stats['other_fail']
+            stats_row = ','.join(self.stats.values())
+            f.write('{0}\n'.format(stats_row))
 
 class LookupTable:
     '''
@@ -184,6 +231,7 @@ def build_lookup_table(day):
 
     lookup_table = LookupTable(day)
     crawl_index = CrawlIndex(day)
+    stats = StatsCollector(day)
 
     for i, each in enumerate(files):
         path = os.path.join(CRAWL_DATA_DIR, each)
@@ -196,6 +244,10 @@ def build_lookup_table(day):
                 # Parse each line into a JSON object
                 r = json.loads(line, encoding='utf-8')
 
+                # Update crawl stats
+                stats.update(r['crawl_status'])
+
+                # Get full Alexa rank
                 true_rank = r['alexa_rank'] + rank_offset
 
                 # Insert seek data, and update seek position
@@ -228,6 +280,7 @@ def build_lookup_table(day):
     # Dump lookup table and crawl index
     lookup_table.dump()
     crawl_index.dump()
+    stats.dump()
 
     return True
 
