@@ -201,13 +201,13 @@ def parse_data(day, data, blacklisted=False):
     parsed = []
 
     # Reformat date into Solr standard format for querying
-    # date_solr = format_date(datetime.strptime(day, '%d-%m-%y'))
+    date_solr = format_date(datetime.strptime(day, '%d-%m-%y'))
 
     for result in data:
         # Object to store fields required
         d = {
             'crawl_status': result['crawl_status'],
-            'date': result['date'],
+            'date': date_solr,
             'alexa_rank': result['alexa_rank']
         }
 
@@ -285,30 +285,35 @@ def extract_data(day, n=1, m=1000):
     print('Parsing the data...')
     parsed = parse_data(day, data)
 
-    # Parse and write data to JSON file
+    # Parse and write data to JSON file, one object per line
     output_file = os.path.join(OUTPUT_DIR, 'output-{0}-{1}-{2}.json'.format(day, n, m))
     with open(output_file, 'w') as f:
-        json.dump(parsed, f)
+        for each in parsed:
+            f.write(json.dumps(each) + '\n')
 
     print('Data written to: ' + output_file)
 
 def extract_blacklist_data(day):
     # Find which crawled URLs are in the blacklist for given day
+    print('Performing blacklist lookups...')
     blacklist = load_blacklist(day)
     urls = load_lookup_table(day)
     hits = blacklist_lookup(urls, blacklist)
 
     # Extract the ranks and retrieve data
     ranks = [pair[1] for pair in hits]
+    print('Grabbing data for {0} different ranks.'.format(len(ranks)))
     data = grab_ranks(day, ranks)
 
     # Finally, parse the data into summarized form
+    print('Parsing the data...')
     parsed = parse_data(day, data, blacklisted=True)
 
     # Write results to output file for given day
     output_file = os.path.join(OUTPUT_DIR, 'output-{0}-blacklist.json'.format(day))
     with open(output_file, 'w') as f:
-        json.dump(parsed, f)
+        for each in parsed:
+            f.write(json.dumps(each) + '\n')
 
     print('Data written to: ' + output_file)
 
