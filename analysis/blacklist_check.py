@@ -137,18 +137,18 @@ def check_blacklist(day1, day2):
     # path = BLACKLIST_FILE.format(day2)
     # blacklist = list(pd.read_csv(path, header=None)[0])
 
-    # Retrieve URL lookup table for day 2
-    path = LOOKUP_TABLE.format(day2)
+    # Load lookup table from disk
+    urls = load_lookup_table(day2)
 
     # Build table from scratch if doesn't exist (takes time!)
-    if not os.path.exists(path):
+    if not urls:
         status = build_lookup_table(day2)
+
         if not status:
             print('URL lookup failed!')
             return
 
-    # Load lookup table from disk
-    urls = load_lookup_table(day2)
+        urls = load_lookup_table(day2)
 
     blacklisted = []
 
