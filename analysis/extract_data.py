@@ -99,6 +99,9 @@ def grab_ranks(day, ranks):
 
     data = []
 
+    # Track iterations since last found rank, used to terminate early
+    last_found = 0
+
     # Loop over start ranks of each file
     # (1, 1+RANK_DELTA, 2+RANK_DELTA, ..., RANK_MAX-RANK_DELTA)
     for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
@@ -116,7 +119,7 @@ def grab_ranks(day, ranks):
         with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
             for line in f:
                 # If current_ranks empty, stop
-                if not current_ranks:
+                if not current_ranks or last_found >= 3000:
                     break
 
                 r = json.loads(line, encoding='utf-8')
@@ -127,6 +130,9 @@ def grab_ranks(day, ranks):
                 if r['alexa_rank'] in current_ranks:
                     data.append(r)
                     current_ranks.remove(r['alexa_rank'])
+                    last_found = 0
+                else:
+                    last_found += 1
 
     return data
 
@@ -148,6 +154,9 @@ def grab_rank_range(day, n=1, m=1000):
 
     data = []
 
+    # Track iterations since last found rank, used to terminate early
+    last_found = 0
+
     # Loop over start ranks of each file
     # (1, 1+RANK_DELTA, 2+RANK_DELTA, ..., RANK_MAX-RANK_DELTA)
     for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
@@ -156,7 +165,8 @@ def grab_rank_range(day, n=1, m=1000):
             with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
                 for line in f:
                     # Stop once all results crawled
-                    if len(data) == m-(n-1):
+                    # Or terminate if 3000 iterations since last "hit"
+                    if len(data) == m-(n-1) or last_found >= 3000:
                         break
 
                     # Parse line into JSON
@@ -169,6 +179,9 @@ def grab_rank_range(day, n=1, m=1000):
                     # Save results in the range specified
                     if n <= r['alexa_rank'] <= m:
                         data.append(r)
+                        last_found = 0
+                    else:
+                        last_found += 1
             break
 
     return data
@@ -301,13 +314,13 @@ def extract_blacklist_data(day):
 
 def main():
     # First 1000
-    extract_data('13-04-17', n=1, m=1000)
+    extract_data('15-04-17', n=1, m=1000)
 
     # Last 1000
-    extract_data('13-04-17', n=999001, m=1000000)
+    #extract_data('13-04-17', n=999001, m=1000000)
 
     # Blacklisted
-    extract_blacklist_data('13-04-17')
+    #extract_blacklist_data('13-04-17')
 
 if __name__ == '__main__':
     main()
