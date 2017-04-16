@@ -70,6 +70,7 @@ def load_lookup_table(day):
     if os.path.exists(path):
         with open(path, 'rb') as f:
             urls = pickle.load(f)
+            return urls
     else:
         return None
 
@@ -150,7 +151,7 @@ def check_blacklist(day1, day2):
 
         urls = load_lookup_table(day2)
 
-    blacklisted = []
+    blacklisted = set()
 
     # Check for blacklist hits
     for each in blacklist:
@@ -161,17 +162,15 @@ def check_blacklist(day1, day2):
         # Returns: [[<url>, <rank>], [<url>, <rank>], ...]
         options = urls.get(url[:5], [])
 
-        for pair in options:
-            if pair[0] == url:
-                blacklisted.append((url, rank))
+        for u, rank in options:
+            if u == url:
+                blacklisted.add((url, rank))
                 break
 
     for url, rank in blacklisted:
         print('Found: {0} at rank {1}'.format(url, rank))
 
 def main():
-    # check_blacklist('12-04-17', '13-04-17')
-
     # Start from most recent data backwards
     days = DAYS_CRAWLED[::-1]
 
@@ -180,6 +179,7 @@ def main():
             break
 
         day1, day2 = days[i+1], day
+        print('Days: {0} vs. {1}'.format(day2, day1))
 
         check_blacklist(day1, day2)
 
