@@ -90,8 +90,8 @@ def grab_ranks(day, ranks):
         Arguments
             - ranks: list of Alexa ranks (int)
     '''
-    # Grab all files crawled for the day
-    files = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each]
+    # Grab all files crawled for the day (in order of name)
+    files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
     if len(files) != 10:
         print('Incorrectly crawled data for day {0}.'.format(day))
@@ -122,11 +122,11 @@ def grab_ranks(day, ranks):
                 r = json.loads(line, encoding='utf-8')
 
                 # Rank correction done b/c of per-file rank info
-                true_rank = r['alexa_rank'] + offset
+                r['alexa_rank'] += offset
 
-                if true_rank in current_ranks:
+                if r['alexa_rank'] in current_ranks:
                     data.append(r)
-                    current_ranks.remove(true_rank)
+                    current_ranks.remove(r['alexa_rank'])
 
     return data
 
@@ -140,7 +140,7 @@ def grab_rank_range(day, n=1, m=1000):
         return []
 
     # Grab all files crawled for the day
-    files = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each]
+    files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
     if len(files) != 10:
         print('Incorrectly crawled data for day {0}.'.format(day))
@@ -153,10 +153,6 @@ def grab_rank_range(day, n=1, m=1000):
     for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
         # Start processing file iff it contains rank range
         if offset < n and m <= offset + RANK_DELTA:
-            # Correction using offset done b/c data crawled with per-file rank info!
-            n -= offset
-            m -= offset
-
             with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
                 for line in f:
                     # Stop once all results crawled
@@ -165,6 +161,9 @@ def grab_rank_range(day, n=1, m=1000):
 
                     # Parse line into JSON
                     r = json.loads(line, encoding='utf-8')
+
+                    # Correction using offset done b/c data crawled with per-file rank info!
+                    r['alexa_rank'] += offset
 
                     # Note: result *may* be incorrectly crawled!
                     # Save results in the range specified
@@ -184,15 +183,35 @@ def parse_data(day, data, blacklisted=False):
     parsed = []
 
     # Reformat date into Solr standard format for querying
-    date_solr = format_date(datetime.strptime(day, '%d-%m-%y'))
+    # date_solr = format_date(datetime.strptime(day, '%d-%m-%y'))
 
     for result in data:
         # Object to store fields required
-        d = {}
+        d = {
+            'crawl_status': result['crawl_status'],
+            'date': result['date'],
+            'alexa_rank': result['alexa_rank']
+        }
 
-        # Store parsed URL and date
+        # Store parsed URL
         d['url'] = url = parse_url(result['url'])
-        d['date'] = date_solr
+
+        if blacklisted:
+            # Already in blacklist
+            d['blacklisted'] = True
+        else:
+            d['blacklisted'] = False
+
+            # Perform blacklist lookup
+            for u, _ in blacklist:
+                if url == u:
+                    d['blacklisted'] = True
+                    break
+
+        # Continue loop if not correctly crawled
+        if d['crawl_status'] != 'OK':
+            parsed.append(d)
+            continue
 
         # Parse raw_html into BS object
         page = BeautifulSoup(result['full_html'], 'lxml')
@@ -208,8 +227,6 @@ def parse_data(day, data, blacklisted=False):
         # print(d['num_images'] == num_images)
 
         # Other parameters
-        d['alexa_rank'] = result['alexa_rank']
-
         d['num_urls'] = len(result['urls'])
 
         if d['num_urls'] > 0:
@@ -239,24 +256,12 @@ def parse_data(day, data, blacklisted=False):
         else:
             d['title_length'] = 0
 
-        if blacklisted:
-            # Already in blacklist
-            d['blacklisted'] = True
-        else:
-            # Perform lookup
-            d['blacklisted'] = False
-
-            for u, _ in blacklist:
-                if url == u:
-                    d['blacklisted'] = True
-                    break
-
         parsed.append(d)
 
     return parsed
 
 def extract_data(day, n=1, m=1000, solr=False):
-    data = grab_data(day, n)
+    data = grab_rank_range(day, n, m)
     parsed = parse_data(day, data)
 
     if not solr:

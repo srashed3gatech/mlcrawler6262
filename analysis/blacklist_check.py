@@ -80,7 +80,7 @@ def build_lookup_table(day):
         Return: True on success, False on failure
     '''
     # Get all crawl JSON files for day
-    files = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each]
+    files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
     if len(files) > RANK_MAX / RANK_DELTA:
         return False
