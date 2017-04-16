@@ -138,7 +138,7 @@ def check_blacklist(day1, day2):
 
     # Build table from scratch if doesn't exist (takes time!)
     if not os.path.exists(path):
-        status = build_lookup_table(day2):
+        status = build_lookup_table(day2)
         if not status:
             print('URL lookup failed!')
             return
