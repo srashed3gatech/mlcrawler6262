@@ -4,66 +4,181 @@
     The goal of this script is to extract N website results
     and summarize their data for insertion into a database (e.g., Solr).
 '''
-import os
-import json
-import pysolr
-from bs4 import BeautifulSoup
+import os, re, sys, json
 from datetime import datetime
 
-from blacklist_check import parse_url, BLACKLIST_FILE
+import pysolr
+from bs4 import BeautifulSoup
+
+from blacklist_check import parse_url, load_lookup_table, DAYS_CRAWLED
 
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
 
+# Number of Alexa URLs per data file
+RANK_DELTA = 100000
+RANK_MAX = 1000000
+
+# Data for blacklists by day
+BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
+BLACKLIST_FILE = os.path.join(BLACKLIST_DIR, 'blacklist-{0}.csv')
+
+# Data output directory
 OUTPUT_DIR = 'output'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# Solr configuration
 SOLR_CORE_URL = 'http://localhost:8983/solr/search/'
 SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 def format_date(dt, fmt=SOLR_DATE_FORMAT):
     return datetime.strftime(dt, fmt)
 
+def blacklist_lookup(urls, blacklist):
+    '''
+        Given a URL lookup table, checks which URLs are in the blacklist.
+
+        Arguments
+            - urls: dict of {first 5 chars of URL: list of (url, rank)}
+            - blacklist: list of URLs
+
+        Returns: list of (url, rank) in blacklist
+    '''
+    found = []
+
+    # Check if any crawled URLs are in the blacklist
+    for each in blacklist:
+        # Extract correct URL format
+        url = re.search(BLACKLIST_REGEX, each).group(2)
+
+        # Perform lookup in crawled URLs
+        # Returns: [[<url>, <rank>], [<url>, <rank>], ...]
+        options = urls.get(url[:5], [])
+
+        for pair in options:
+            if pair[0] == url:
+                found.append((url, rank))
+                break
+
+    return found
+
 def load_blacklist(day):
-    '''Load URL blacklist for a given day. Return: lookup table of first 5 chars of URL.'''
-    blacklist = {}
+    '''
+        Load URL blacklist (in CSV format) for a given day (dd-mm-yy).
+
+        Return: list of URLs in blacklist
+    '''
+    blacklist = []
 
     with open(BLACKLIST_FILE.format(day), 'r') as f:
         for line in f:
             url = line.split(',')[0]
-            l = blacklist.get(url[:5], [])
-            l.append(url)
-            blacklist[url[:5]] = l
+            blacklist.append(url)
+
+    # with open(BLACKLIST_FILE.format(day), 'r') as f:
+    #     for line in f:
+    #         url = line.split(',')[0]
+    #         l = blacklist.get(url[:5], [])
+    #         l.append(url)
+    #         blacklist[url[:5]] = l
 
     return blacklist
 
-def grab_data(day, n):
-    '''Grab `n` data samples from crawl data for a given day.'''
+def grab_ranks(day, ranks):
+    '''
+        Grab data samples for crawl for given day for specific ranks.
+
+        Arguments
+            - ranks: list of Alexa ranks (int)
+    '''
+    # Grab all files crawled for the day
+    files = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each]
+
+    if len(files) != 10:
+        print('Incorrectly crawled data for day {0}.'.format(day))
+        sys.exit(0)
+
     data = []
 
-    # Grab first file crawled for the day (top 100k)
-    path = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each][0]
+    # Loop over start ranks of each file
+    # (1, 1+RANK_DELTA, 2+RANK_DELTA, ..., RANK_MAX-RANK_DELTA)
+    for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
+        # Retrieve ranks that are in this file
+        current_ranks = []
+        for r in sorted(set(ranks)):
+            if offset < r <= offset + RANK_DELTA:
+                current_ranks.append(r)
 
-    i = 0
+        # Skip this file if no ranks of interest
+        if not current_ranks:
+            continue
 
-    with open(os.path.join(CRAWL_DATA_DIR, path), 'r') as f:
-        for line in f:
-            if i == n:
-                break
+        # Iterate through current file
+        with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
+            for line in f:
+                # If current_ranks empty, stop
+                if not current_ranks:
+                    break
 
-            # Parse line into JSON
-            r = json.loads(line, encoding='utf-8')
+                r = json.loads(line, encoding='utf-8')
 
-            # Only append correctly crawled pages
-            if r['crawl_status'] == 'OK':
-                data.append(r)
-                i += 1
+                # Rank correction done b/c of per-file rank info
+                true_rank = r['alexa_rank'] + offset
+
+                if true_rank in current_ranks:
+                    data.append(r)
+                    current_ranks.remove(true_rank)
 
     return data
 
-def parse_data(day, data):
-    '''Parse data samples into a summarized format with information of interest.'''
+def grab_rank_range(day, n=1, m=1000):
+    '''
+        Grab data samples from crawl data for a given day from rank `n` to `m` (inclusive).
+
+        Note: n, m must both be within the bounds of a single file.
+    '''
+    if m >= n:
+        return []
+
+    # Grab all files crawled for the day
+    files = [each for each in sorted(os.listdir(CRAWL_DATA_DIR)) if day in each]
+
+    if len(files) != 10:
+        print('Incorrectly crawled data for day {0}.'.format(day))
+        sys.exit(0)
+
+    data = []
+
+    # Loop over start ranks of each file
+    # (1, 1+RANK_DELTA, 2+RANK_DELTA, ..., RANK_MAX-RANK_DELTA)
+    for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
+        # Start processing file iff it contains rank range
+        if offset < n and m <= offset + RANK_DELTA:
+            # Correction using offset done b/c data crawled with per-file rank info!
+            n -= offset
+            m -= offset
+
+            with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
+                for line in f:
+                    # Stop once all results crawled
+                    if len(data) == m-(n-1):
+                        break
+
+                    # Parse line into JSON
+                    r = json.loads(line, encoding='utf-8')
+
+                    # Note: result *may* be incorrectly crawled!
+                    # Save results in the range specified
+                    if n <= r['alexa_rank'] <= m:
+                        data.append(r)
+            break
+
+    return data
+
+def parse_data(day, data, blacklisted=False):
+    '''Parse data samples into a summarized format with features of interest.'''
     # Grab blacklist for current day
-    blacklist = load_blacklist(day)
+    if not blacklisted:
+        blacklist = load_blacklist(day)
 
     # Stores final parsed data
     parsed = []
@@ -88,7 +203,9 @@ def parse_data(day, data):
         d['num_words'] = len(body.get_text().replace('\n', '').split(' '))
 
         # Get number of images
-        d['num_images'] = len(page.select('img'))
+        d['num_images'] = len(body.select('img'))
+        # num_images = len(re.findall(r'<img([\w\W]+?)/?>', result['html']))
+        # print(d['num_images'] == num_images)
 
         # Other parameters
         d['alexa_rank'] = result['alexa_rank']
@@ -122,24 +239,29 @@ def parse_data(day, data):
         else:
             d['title_length'] = 0
 
-        d['blacklisted'] = False
+        if blacklisted:
+            # Already in blacklist
+            d['blacklisted'] = True
+        else:
+            # Perform lookup
+            d['blacklisted'] = False
 
-        # Perform blacklist lookup
-        if url[:5] in blacklist:
-            if url in blacklist[url[:5]]:
-                d['blacklisted'] = True
+            for u, _ in blacklist:
+                if url == u:
+                    d['blacklisted'] = True
+                    break
 
         parsed.append(d)
 
     return parsed
 
-def extract_data(day, n=1000, solr=False):
+def extract_data(day, n=1, m=1000, solr=False):
     data = grab_data(day, n)
     parsed = parse_data(day, data)
 
     if not solr:
         # Write to JSON file
-        output_file = os.path.join(OUTPUT_DIR, 'output-{0}.json'.format(day))
+        output_file = os.path.join(OUTPUT_DIR, 'output-{0}-{1}-{2}.json'.format(day, n, m))
 
         with open(output_file, 'w') as f:
             json.dump(parsed, f)
@@ -152,9 +274,35 @@ def extract_data(day, n=1000, solr=False):
 
         print('Data inserted into: ' + SOLR_CORE_URL)
 
+def extract_blacklist_data(day):
+    # Find which crawled URLs are in the blacklist for given day
+    blacklist = load_blacklist(day)
+    urls = load_lookup_table(day)
+    hits = blacklist_lookup(urls, blacklist)
+
+    # Extract the ranks and retrieve data
+    ranks = [pair[1] for pair in hits]
+    data = grab_ranks(day, ranks)
+
+    # Finally, parse the data into summarized form
+    parsed = parse_data(day, data, blacklisted=True)
+
+    # Write results to output file for given day
+    output_file = os.path.join(OUTPUT_DIR, 'output-{0}-blacklist.json'.format(day))
+    with open(output_file, 'w') as f:
+        json.dump(parsed, f)
+
+    print('Data written to: ' + output_file)
+
 def main():
-    extract_data('13-04-17', n=1000, solr=False)
-    extract_data('12-04-17', n=1000, solr=False)
+    # First 1000
+    extract_data('13-04-17', n=1, m=1000)
+
+    # Last 1000
+    extract_data('13-04-17', n=999001, m=1000000)
+
+    # Blacklisted
+    extract_blacklist_data('13-04-17')
 
 if __name__ == '__main__':
     main()
