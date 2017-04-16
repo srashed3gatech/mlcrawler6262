@@ -8,7 +8,7 @@ import pandas as pd
 
 DAYS_CRAWLED = [
     '04-04-17',
-    '05-04-17',
+#    '05-04-17',
     '06-04-17',
     '07-04-17',
     '11-04-17',
@@ -70,6 +70,7 @@ def load_lookup_table(day):
     if os.path.exists(path):
         with open(path, 'rb') as f:
             urls = pickle.load(f)
+            return urls
     else:
         return None
 
@@ -79,6 +80,10 @@ def build_lookup_table(day):
 
         Return: True on success, False on failure
     '''
+    # If already exists, return
+    if os.path.exists(LOOKUP_TABLE.format(day)):
+        return True
+
     # Get all crawl JSON files for day
     files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
@@ -133,20 +138,20 @@ def check_blacklist(day1, day2):
     # path = BLACKLIST_FILE.format(day2)
     # blacklist = list(pd.read_csv(path, header=None)[0])
 
-    # Retrieve URL lookup table for day 2
-    path = LOOKUP_TABLE.format(day2)
+    # Load lookup table from disk
+    urls = load_lookup_table(day2)
 
     # Build table from scratch if doesn't exist (takes time!)
-    if not os.path.exists(path):
+    if not urls:
         status = build_lookup_table(day2)
+
         if not status:
             print('URL lookup failed!')
             return
 
-    # Load lookup table from disk
-    urls = load_lookup_table(day2)
+        urls = load_lookup_table(day2)
 
-    blacklisted = []
+    blacklisted = set()
 
     # Check for blacklist hits
     for each in blacklist:
@@ -157,24 +162,26 @@ def check_blacklist(day1, day2):
         # Returns: [[<url>, <rank>], [<url>, <rank>], ...]
         options = urls.get(url[:5], [])
 
-        for pair in options:
-            if pair[0] == url:
-                blacklisted.append((url, rank))
+        for u, rank in options:
+            if u == url:
+                blacklisted.add((url, rank))
                 break
 
     for url, rank in blacklisted:
         print('Found: {0} at rank {1}'.format(url, rank))
 
 def main():
-    # check_blacklist('12-04-17', '13-04-17')
+    # Start from most recent data backwards
+    days = DAYS_CRAWLED[::-1]
 
-    for day in DAYS_CRAWLED[::-1]:
-        status = build_lookup_table(day)
+    for i, day in enumerate(days):
+        if i == len(DAYS_CRAWLED)-1:
+            break
 
-        if not status:
-            print('Failed to build table for ' + day)
-        else:
-            print('Completed ' + day)
+        day1, day2 = days[i+1], day
+        print('Days: {0} vs. {1}'.format(day2, day1))
+
+        check_blacklist(day1, day2)
 
 if __name__ == '__main__':
     main()
