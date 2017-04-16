@@ -64,10 +64,15 @@ class StatsCollector:
         self.path = CRAWL_STATS_PATH.format(day)
         self.stats = OrderedDict([
             ('total_crawled', 0),
-            ('dns_fail', 0),
-            ('http_fail', 0),
+            ('dns_error', 0),
+            ('http_error', 0),
             ('http_timeout', 0),
-            ('other_fail', 0),
+            ('tcp_timeout', 0),
+            ('conn_refused', 0),
+            ('connect_error', 0),
+            ('resp_failed', 0),
+            ('resp_never_received', 0),
+            ('other_error', 0),
             ('total_error', 0),
             ('total_ok', 0),
         ])
@@ -75,25 +80,36 @@ class StatsCollector:
     def update(self, crawl_status):
         self.stats['total_crawled'] += 1
 
-        if crawl_status == 'DNSLookupError':
-            self.stats['dns_fail'] += 1
-        elif crawl_status == 'HTTPError':
-            self.stats['http_fail'] += 1
-        elif 'TimeoutError' in crawl_status:
-            self.stats['http_timeout'] += 1
-        elif crawl_status == 'OK':
+        if crawl_status == 'OK':
             self.stats['total_ok'] += 1
         else:
-            self.stats['other_fail'] += 1
+            self.stats['total_error'] += 1
+
+            if crawl_status == 'DNSLookupError':
+                self.stats['dns_error'] += 1
+            elif crawl_status == 'HTTPError':
+                self.stats['http_error'] += 1
+            elif 'TimeoutError' in crawl_status:
+                self.stats['http_timeout'] += 1
+            elif 'TCPTimedOutError' in crawl_status:
+                self.stats['tcp_timeout'] += 1
+            elif 'ConnectionRefusedError' in crawl_status:
+                self.stats['conn_refused'] += 1
+            elif 'ConnectError' in crawl_status:
+                self.stats['connect_error'] += 1
+            elif 'ResponseNeverReceived' in crawl_status:
+                self.stats['resp_never_received'] += 1
+            elif 'ResponseFailed' in crawl_status:
+                self.stats['resp_failed'] += 1
+            else:
+                self.stats['other_error'] += 1
 
     def dump(self):
         with open(self.path, 'w') as f:
             # CSV header row
             f.write('{0}\n'.format(','.join(self.stats.keys())))
 
-            # Stats for file
-            self.stats['total_error'] = self.stats['dns_fail'] + self.stats['http_fail'] + \
-                                        self.stats['http_timeout'] + self.stats['other_fail']
+            # Stats row
             stats_row = ','.join([str(each) for each self.stats.values()])
             f.write('{0}\n'.format(stats_row))
 
@@ -194,41 +210,27 @@ def blacklist_diff(day1, day2):
 
     return list(d2[0][results.keys()])
 
-def load_lookup_table(day):
-    path = LOOKUP_TABLE.format(day)
-
-    if os.path.exists(path):
-        with open(path, 'rb') as f:
-            urls = pickle.load(f)
-            return urls
-    else:
-        return None
-
-def build_lookup_table(day):
+def collect_metadata(day):
     '''
-        Given a day, extract all crawled URLs from the day and store in a pickle.
+        Given a day, extract metadata from crawl data.
+
+        Metadata extracted:
+            1. Crawl stats: number crawled, number of errors, etc.
+            2. URL lookup table: build a lookup table for quick checking
+            3. Crawl index: build a map of rank to position in file
 
         Return: True on success, False on failure
     '''
-    # If already exists, return
-    # if os.path.exists(LOOKUP_TABLE.format(day)):
-    #     return True
-
     # Get all crawl JSON files for day
     files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
-    if len(files) > RANK_MAX / RANK_DELTA:
+    if len(files) != RANK_MAX / RANK_DELTA:
         return False
-
-    # Extract URLs from crawled data for day 2
-
-    # Build a hash-based lookup table
-    # Key: first 5 chars of URL, Value: list of URLs
-    # crawled = {}
 
     # Track rank offset of current data file
     rank_offset = 0
 
+    # Instances for metadata collection
     lookup_table = LookupTable(day)
     crawl_index = CrawlIndex(day)
     stats = StatsCollector(day)
@@ -257,14 +259,7 @@ def build_lookup_table(day):
                 try:
                     # Extract URL using regex
                     url = re.search(URL_REGEX, r['url']).group(2)
-
-                    # Store URL in lookup table
-                    # Note: table WILL have dupes (e.g., YouTube)
-                    # Kept them to maintain rank data
                     lookup_table.insert(url, true_rank)
-                    # lookup = crawled.get(url[:5], [])
-                    # lookup.append([url, r['alexa_rank'] + rank_offset])
-                    # crawled[url[:5]] = lookup
                 except:
                     # Skips malformed URLs
                     pass
@@ -272,10 +267,6 @@ def build_lookup_table(day):
         rank_offset += RANK_DELTA
 
         print('Completed file ' + str(i+1))
-
-    # Save lookup table for later use
-    # with open(LOOKUP_TABLE.format(day), 'wb') as f:
-    #     pickle.dump(crawled, f)
 
     # Dump lookup table and crawl index
     lookup_table.dump()
@@ -291,40 +282,35 @@ def check_blacklist(day1, day2):
     # path = BLACKLIST_FILE.format(day2)
     # blacklist = list(pd.read_csv(path, header=None)[0])
 
-    # Load lookup table from disk
-    urls = load_lookup_table(day2)
-
     # Build table from scratch if doesn't exist (takes time!)
-    if not urls:
-        status = build_lookup_table(day2)
+    if not os.path.exists(LOOKUP_TABLE.format(day2)):
+        status = collect_metadata(day2)
 
         if not status:
-            print('URL lookup failed!')
+            print('Metadata collection failed!')
             return
 
-        urls = load_lookup_table(day2)
+    # Load lookup table from disk
+    lookup_table = LookupTable(day2)
+    lookup_table.load()
 
+    # Set of blacklisted URLs
     blacklisted = set()
 
     # Check for blacklist hits
     for each in blacklist:
-        # Extract correct URL format
-        url = re.search(BLACKLIST_REGEX, each).group(2)
+        # Perform URL lookup
+        # Returns: [url, rank]
+        result = lookup_table.lookup(url)
 
-        # Perform lookup in crawled URLs
-        # Returns: [[<url>, <rank>], [<url>, <rank>], ...]
-        options = urls.get(url[:5], [])
-
-        for u, rank in options:
-            if u == url:
-                blacklisted.add((url, rank))
-                break
+        if result:
+            blacklisted.add(result)
 
     for url, rank in blacklisted:
         print('Found: {0} at rank {1}'.format(url, rank))
 
 def main():
-    build_lookup_table('15-04-17')
+    collect_metadata('15-04-17')
 
     # Start from most recent data backwards
     # days = DAYS_CRAWLED[::-1]
