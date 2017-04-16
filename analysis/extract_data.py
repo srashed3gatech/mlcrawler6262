@@ -276,6 +276,8 @@ def parse_data(day, data, blacklisted=False):
 
         parsed.append(d)
 
+    return parsed
+
 def extract_data(day, n=1, m=1000):
     print('Grabbing data from rank {0} to rank {1}.'.format(n, m))
     data = grab_rank_range(day, n, m)
