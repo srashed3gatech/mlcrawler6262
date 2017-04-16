@@ -94,7 +94,7 @@ class StatsCollector:
             # Stats for file
             self.stats['total_error'] = self.stats['dns_fail'] + self.stats['http_fail'] + \
                                         self.stats['http_timeout'] + self.stats['other_fail']
-            stats_row = ','.join(self.stats.values())
+            stats_row = ','.join([str(each) for each self.stats.values()])
             f.write('{0}\n'.format(stats_row))
 
 class LookupTable:
