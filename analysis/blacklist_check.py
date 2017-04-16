@@ -110,7 +110,7 @@ class StatsCollector:
             f.write('{0}\n'.format(','.join(self.stats.keys())))
 
             # Stats row
-            stats_row = ','.join([str(each) for each self.stats.values()])
+            stats_row = ','.join([str(each) for each in self.stats.values()])
             f.write('{0}\n'.format(stats_row))
 
 class LookupTable:
