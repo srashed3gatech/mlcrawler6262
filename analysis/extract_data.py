@@ -136,7 +136,7 @@ def grab_rank_range(day, n=1, m=1000):
 
         Note: n, m must both be within the bounds of a single file.
     '''
-    if m >= n:
+    if n > m:
         return []
 
     # Grab all files crawled for the day
