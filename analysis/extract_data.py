@@ -10,7 +10,7 @@ from datetime import datetime
 import pysolr
 from bs4 import BeautifulSoup
 
-from blacklist_check import parse_url, load_lookup_table, DAYS_CRAWLED
+from blacklist_check import parse_url, LookupTable, CrawlIndex, DAYS_CRAWLED
 
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
 
@@ -33,31 +33,24 @@ SOLR_DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 def format_date(dt, fmt=SOLR_DATE_FORMAT):
     return datetime.strftime(dt, fmt)
 
-def blacklist_lookup(urls, blacklist):
+def blacklist_lookup(lookup_table, blacklist):
     '''
         Given a URL lookup table, checks which URLs are in the blacklist.
 
         Arguments
-            - urls: dict of {first 5 chars of URL: list of (url, rank)}
-            - blacklist: list of URLs
+            - lookup_table: LookupTable instance
+            - blacklist: list of URLs (string)
 
-        Returns: list of (url, rank) in blacklist
+        Returns: list of [url, rank] in blacklist.
     '''
     found = []
 
     # Check if any crawled URLs are in the blacklist
     for each in blacklist:
-        # Extract correct URL format
-        url = re.search(BLACKLIST_REGEX, each).group(2)
+        result = lookup_table.lookup(url)
 
-        # Perform lookup in crawled URLs
-        # Returns: [[<url>, <rank>], [<url>, <rank>], ...]
-        options = urls.get(url[:5], [])
-
-        for pair in options:
-            if pair[0] == url:
-                found.append((url, rank))
-                break
+        if result:
+            found.append(result)
 
     return found
 
@@ -89,50 +82,25 @@ def grab_ranks(day, ranks):
 
         Arguments
             - ranks: list of Alexa ranks (int)
-    '''
-    # Grab all files crawled for the day (in order of name)
-    files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
 
-    if len(files) != 10:
-        print('Incorrectly crawled data for day {0}.'.format(day))
+        Returns: list of parsed JSON objects for all given ranks.
+    '''
+    crawl_index = CrawlIndex(day)
+    crawl_index.load()
+
+    if not crawl_index.loaded:
+        print('No crawl index available for {0}!'.format(day))
         sys.exit(0)
 
     data = []
 
-    # Track iterations since last found rank, used to terminate early
-    last_found = 0
+    for rank in ranks:
+        # Retrieve data using crawl index
+        r = crawl_index.get(rank)
 
-    # Loop over start ranks of each file
-    # (1, 1+RANK_DELTA, 2+RANK_DELTA, ..., RANK_MAX-RANK_DELTA)
-    for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
-        # Retrieve ranks that are in this file
-        current_ranks = []
-        for r in sorted(set(ranks)):
-            if offset < r <= offset + RANK_DELTA:
-                current_ranks.append(r)
-
-        # Skip this file if no ranks of interest
-        if not current_ranks:
-            continue
-
-        # Iterate through current file
-        with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
-            for line in f:
-                # If current_ranks empty, stop
-                if not current_ranks or last_found >= 3000:
-                    break
-
-                r = json.loads(line, encoding='utf-8')
-
-                # Rank correction done b/c of per-file rank info
-                r['alexa_rank'] += offset
-
-                if r['alexa_rank'] in current_ranks:
-                    data.append(r)
-                    current_ranks.remove(r['alexa_rank'])
-                    last_found = 0
-                else:
-                    last_found += 1
+        # Skip any ranks that have not been crawled
+        if r:
+            data.append(r)
 
     return data
 
@@ -140,49 +108,29 @@ def grab_rank_range(day, n=1, m=1000):
     '''
         Grab data samples from crawl data for a given day from rank `n` to `m` (inclusive).
 
-        Note: n, m must both be within the bounds of a single file.
+        Arguments:
+            - n: start rank (inclusive)
+            - m: stop rank (inclusive)
+
+        Returns: list of parsed JSON objects for the entire rank range.
     '''
     if n > m:
         return []
 
-    # Grab all files crawled for the day
-    files = sorted([each for each in os.listdir(CRAWL_DATA_DIR) if day in each])
+    crawl_index = CrawlIndex(day)
+    crawl_index.load()
 
-    if len(files) != 10:
-        print('Incorrectly crawled data for day {0}.'.format(day))
+    if not crawl_index.loaded:
+        print('No crawl index available for {0}!'.format(day))
         sys.exit(0)
 
     data = []
 
-    # Track iterations since last found rank, used to terminate early
-    last_found = 0
+    for rank in range(n, m+1):
+        r = crawl_index.get(rank)
 
-    # Loop over start ranks of each file
-    # (1, 1+RANK_DELTA, 2+RANK_DELTA, ..., RANK_MAX-RANK_DELTA)
-    for i, offset in enumerate(range(0, RANK_MAX, RANK_DELTA)):
-        # Start processing file iff it contains rank range
-        if offset < n and m <= offset + RANK_DELTA:
-            with open(os.path.join(CRAWL_DATA_DIR, files[i]), 'r') as f:
-                for line in f:
-                    # Stop once all results crawled
-                    # Or terminate if 3000 iterations since last "hit"
-                    if len(data) == m-(n-1) or last_found >= 3000:
-                        break
-
-                    # Parse line into JSON
-                    r = json.loads(line, encoding='utf-8')
-
-                    # Correction using offset done b/c data crawled with per-file rank info!
-                    r['alexa_rank'] += offset
-
-                    # Note: result *may* be incorrectly crawled!
-                    # Save results in the range specified
-                    if n <= r['alexa_rank'] <= m:
-                        data.append(r)
-                        last_found = 0
-                    elif r['alexa_rank'] >= n:
-                        last_found += 1
-            break
+        if r:
+            data.append(r)
 
     return data
 
@@ -241,7 +189,6 @@ def parse_data(day, data, blacklisted=False):
 
         # Get number of images
         d['num_images'] = len(page.select('img'))
-        # num_images = len(re.findall(r'<img([\w\W]+?)/?>', result['full_html']))
 
         # Other parameters
         d['num_urls'] = len(result['urls'])
@@ -296,8 +243,8 @@ def extract_blacklist_data(day):
     # Find which crawled URLs are in the blacklist for given day
     print('Performing blacklist lookups...')
     blacklist = load_blacklist(day)
-    urls = load_lookup_table(day)
-    hits = blacklist_lookup(urls, blacklist)
+    lookup_table = LookupTable(day)
+    hits = blacklist_lookup(lookup_table, blacklist)
 
     # Extract the ranks and retrieve data
     ranks = [pair[1] for pair in hits]
@@ -321,7 +268,7 @@ def main():
     extract_data('15-04-17', n=1, m=1000)
 
     # Last 1000
-    #extract_data('13-04-17', n=999001, m=1000000)
+    extract_data('15-04-17', n=999001, m=1000000)
 
     # Blacklisted
     #extract_blacklist_data('13-04-17')

@@ -124,8 +124,10 @@ class LookupTable:
         self.idx = idx
         self.path = LOOKUP_TABLE.format(self.day)
         self.table = {}
+        self.loaded = False
 
     def lookup(self, url):
+        '''Given a URL, returns [url, rank] if it is in the table, [] otherwise.'''
         results = self.table.get(url[:self.idx], [])
 
         if results:
@@ -151,6 +153,7 @@ class LookupTable:
         if os.path.exists(self.path):
             with open(self.path, 'rb') as f:
                 self.table = pickle.load(f)
+                self.loaded = True
         else:
             self.table = {}
 
@@ -164,12 +167,17 @@ class CrawlIndex:
         self.day = day
         self.path = CRAWL_INDEX_PATH.format(day)
         self.index = {}
+        self.loaded = False
 
     def insert(self, rank, path, seekpos):
         self.index[rank] = [path, seekpos]
 
-    def lookup(self, rank):
-        '''Return data for particular rank.'''
+    def get(self, rank):
+        '''
+            Get data for a particular rank.
+
+            Returns: parsed JSON object if found, {} if not found.
+        '''
         path, seekpos = self.index.get(rank, [])
 
         if result:
@@ -189,6 +197,7 @@ class CrawlIndex:
         if os.path.exists(self.path):
             with open(self.path, 'rb') as f:
                 self.index = pickle.load(f)
+                self.loaded = True
         else:
             self.index = {}
 
