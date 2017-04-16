@@ -240,9 +240,8 @@ def parse_data(day, data, blacklisted=False):
         d['num_words'] = len(body.get_text().replace('\n', '').split(' '))
 
         # Get number of images
-        d['num_images'] = len(body.select('img'))
-        # num_images = len(re.findall(r'<img([\w\W]+?)/?>', result['html']))
-        # print(d['num_images'] == num_images)
+        d['num_images'] = len(page.select('img'))
+        # num_images = len(re.findall(r'<img([\w\W]+?)/?>', result['full_html']))
 
         # Other parameters
         d['num_urls'] = len(result['urls'])
