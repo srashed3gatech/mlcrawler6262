@@ -87,6 +87,7 @@ def grab_ranks(day, ranks, crawl_index):
 
         # Skip any ranks that have not been crawled
         if r:
+            r['alexa_rank'] = rank
             data.append(r)
 
     return data
@@ -200,9 +201,10 @@ def extract_data(day, n=1, m=1000):
     if m > max_rank:
         # Shift ranks down by difference with max
         diff = m - max_rank
-        ranks = range(n-diff, m-diff+1)
-    else:
-        ranks = range(n, m+1)
+        n -= diff
+        m -= diff
+
+    ranks = range(n, m+1)
 
     print('Grabbing data from rank {0} to rank {1}.'.format(min(ranks), max(ranks)))
     data = grab_ranks(day, ranks, crawl_index)
@@ -227,6 +229,7 @@ def extract_blacklist_data(day):
     lookup_table = LookupTable(day)
     lookup_table.load()
 
+    # Find blacklist hits from Alexa top 1M
     hits = blacklist_lookup(lookup_table, blacklist)
 
     # Load crawl index
@@ -237,7 +240,7 @@ def extract_blacklist_data(day):
         print('No crawl index available for {0}!'.format(day))
         sys.exit(0)
 
-    # Extract the ranks and retrieve data
+    # Extract ranks of hits and retrieve data
     ranks = [pair[1] for pair in hits]
     print('Grabbing data for {0} different ranks.'.format(len(ranks)))
     data = grab_ranks(day, ranks, crawl_index)
@@ -247,7 +250,7 @@ def extract_blacklist_data(day):
     parsed = parse_data(day, data, blacklisted=True)
 
     # Write results to output file for given day
-    output_file = os.path.join(OUTPUT_DIR, 'output-{0}-blacklist.json'.format(day))
+    output_file = os.path.join(OUTPUT_DIR, 'output-{0}-blacklisted.json'.format(day))
     with open(output_file, 'w') as f:
         for each in parsed:
             f.write(json.dumps(each) + '\n')
@@ -262,7 +265,7 @@ def main():
     extract_data('15-04-17', n=999001, m=1000000)
 
     # Blacklisted
-    #extract_blacklist_data('13-04-17')
+    extract_blacklist_data('15-04-17')
 
 if __name__ == '__main__':
     main()
