@@ -1,19 +1,15 @@
 <h1> MLCrawler 6262 Project Repository </h1>
-<p>
-Analysis:
+
+**Analysis:**
 - blacklist_check.py : shows blacklist deferral that we also crawled in our dataset
 - extract_data.py : stats generation from raw crawled document
-</p>
-<p>
-Crawler:
-- provision_main.sh : provision system necessary to run everything
 
-+ blacklist
-  - blacklist_parser.py : parse and generate single blacklist csv from collect source data with different formatting
-  - blacklist_solr.py : post blacklist data into SOLR
-</p>
-<p>
-+ crawler-scrapy
++--**Crawler:**
+|+-- provision_main.sh : provision system necessary to run everything
+|+-- blacklist
+|     +-- blacklist_parser.py : parse and generate single blacklist csv from collect source data with different formatting
+|     +-- blacklist_solr.py : post blacklist data into SOLR
+|+ crawler-scrapy
   + alexatop
     + alexatop
       + spiders
@@ -27,9 +23,7 @@ Crawler:
     - scrapy.cfg : scrapy project config
     + data : data repo for crawled items
     + logs : scrapy run log
-</p> 
-<p>
-Resources:
+
+**Resources:**
   - pbl_crawl.sh: cronbased daily blacklist fetch script
   - run_alexa_crawl.sh : cronbased daily alexa startup script
-</p>
