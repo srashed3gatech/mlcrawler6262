@@ -64,3 +64,24 @@ $ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
 $ sh run_alexa_crawl.sh
 #you will find data at ./data
 ```
+**Post Analysis & Data Loading**
+```
+$ source ~/venv/bin/activate  #activate python 3.X
+# start SOLR on port 8983 (default)
+$ solr start
+# create 2 schema for crawl data and 
+bin/solr create_core -c search
+
+# Process Blacklist files to dump into single file (data.json) and upload to solr
+$ cd crawler/blacklist/
+$ sh blacklist_solr.sh
+
+# post analysis data generation
+$ cd analysis/
+# this will generate json files, ready to post into SOLR
+$ python extract_data.py
+# post data into solr
+$ SOLR_HOME/bin/post -c search output/YOUR_FILE_NAME.json
+```
+**Visualization System**
+TODO
