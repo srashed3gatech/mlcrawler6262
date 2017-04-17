@@ -1,10 +1,11 @@
 <h1> MLCrawler 6262 Project Repository </h1>
 .
-[**Analysis**](./analysis)
-- [blacklist_check.py](./analysis/blacklist_check.py) : shows blacklist deferral that we also crawled in our dataset
-- [extract_data.py](./analysis/extract_data.py) : stats generation from raw crawled document
+* [**Analysis**](./analysis)
+    * [blacklist_check.py](./analysis/blacklist_check.py) : shows blacklist deferral that we also crawled in our dataset
+    * [extract_data.py](./analysis/extract_data.py) : stats generation from raw crawled document
 
---**Crawler:**
+
+**Crawler:**
 |-- provision_main.sh : provision system necessary to run everything
 |-- blacklist
     |-- blacklist_parser.py : parse and generate single blacklist csv from collect source data with different formatting
