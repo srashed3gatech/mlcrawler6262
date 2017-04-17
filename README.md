@@ -31,5 +31,29 @@
 
 <h2> How to use this code </h2>
 
-**Prerequisite:**: Install provisioning script
+**Prerequisite:**: 
+Install provisioning script
 ```$ ./crawler/provision_main.sh```
+
+**tuning the system** (use local DNS cache & increase max open file limit):
+```## configuring dnsmasq for dns caching
+$ sudo vim /etc/NetworkManager/dnsmasq.d/cache
+#write following on the cache file
+cache-size=1000000
+#restart network manager to affect cache
+$ sudo restart network-manager
+#check if its working
+$ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
+
+#increasing max file open limit (ulimit -n) for crawler user
+$ sudo vim /etc/security/limits.conf
+*               soft    nofile          65535
+*               hard    nofile          65535
+#change this to effect ulimit without restart (then logout and login)
+$ sudo vim /etc/pam.d/common-session
+session     required    pam_limits.so
+```
+
+
+**Running the crawler**
+```$ cd 
