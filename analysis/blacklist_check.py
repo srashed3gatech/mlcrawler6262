@@ -204,7 +204,12 @@ class CrawlIndex:
             self.index = {}
 
 def parse_url(url, p=URL_REGEX):
-    return re.search(p, url).group(2)
+    r = re.search(p, url)
+
+    if r:
+        return r.group(2)
+    else:
+        return None
 
 def blacklist_diff(day1, day2):
     '''Given two days, returns blacklist URLs in day2 that were not found in day1.'''

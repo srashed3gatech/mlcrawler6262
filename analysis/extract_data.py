@@ -120,6 +120,10 @@ def parse_data(day, data, blacklisted=False):
         # Store parsed URL
         d['url'] = url = parse_url(result['url'])
 
+        # Skip results with malformed URLs
+        if not url:
+            continue
+
         if blacklisted:
             # Already in blacklist
             d['blacklisted'] = True
