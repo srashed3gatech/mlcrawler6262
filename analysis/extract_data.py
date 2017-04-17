@@ -46,7 +46,7 @@ def blacklist_lookup(lookup_table, blacklist):
     found = []
 
     # Check if any crawled URLs are in the blacklist
-    for each in blacklist:
+    for url in blacklist:
         result = lookup_table.lookup(url)
 
         if result:
@@ -241,7 +241,7 @@ def extract_blacklist_data(day):
         sys.exit(0)
 
     # Extract ranks of hits and retrieve data
-    ranks = [pair[1] for pair in hits]
+    ranks = sorted([pair[1] for pair in hits])
     print('Grabbing data for {0} different ranks.'.format(len(ranks)))
     data = grab_ranks(day, ranks, crawl_index)
 
@@ -258,14 +258,17 @@ def extract_blacklist_data(day):
     print('Data written to: ' + output_file)
 
 def main():
-    # First 1000
-    extract_data('15-04-17', n=1, m=1000)
+    for day in DAYS_CRAWLED:
+        print('Processing day ' + day)
 
-    # Last 1000
-    extract_data('15-04-17', n=999001, m=1000000)
+        # First 1000
+        extract_data(day, n=1, m=1000)
 
-    # Blacklisted
-    extract_blacklist_data('15-04-17')
+        # Last 1000
+        extract_data(day, n=999001, m=1000000)
+
+        # Blacklisted
+        extract_blacklist_data(day)
 
 if __name__ == '__main__':
     main()
