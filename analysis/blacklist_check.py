@@ -321,19 +321,17 @@ def check_blacklist(day1, day2):
         print('Found: {0} at rank {1}'.format(url, rank))
 
 def main():
-    # collect_metadata('15-04-17')
-
     # Start from most recent data backwards
-    # days = DAYS_CRAWLED[::-1]
-    #
-    # for i, day in enumerate(days):
-    #     if i == len(DAYS_CRAWLED)-1:
-    #         break
-    #
-    #     day1, day2 = days[i+1], day
-    #     print('Days: {0} vs. {1}'.format(day2, day1))
-    #
-    #     check_blacklist(day1, day2)
+    days = DAYS_CRAWLED[::-1]
+
+    for i, day in enumerate(days):
+        if i == len(DAYS_CRAWLED)-1:
+            break
+
+        day1, day2 = days[i+1], day
+        print('Days: {0} vs. {1}'.format(day2, day1))
+
+        check_blacklist(day1, day2)
 
 if __name__ == '__main__':
     main()
