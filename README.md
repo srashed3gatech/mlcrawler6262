@@ -5,6 +5,8 @@ Analysis:
 - extract_data.py : stats generation from raw crawled document
 
 Crawler:
+- provision_main.sh : provision system necessary to run everything
+
 + blacklist
   - blacklist_parser.py : parse and generate single blacklist csv from collect source data with different formatting
   - blacklist_solr.py : post blacklist data into SOLR
