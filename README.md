@@ -54,6 +54,13 @@ $ sudo vim /etc/pam.d/common-session
 session     required    pam_limits.so
 ```
 
-
 **Running the crawler**
-```$ cd 
+```
+#use tmux so crawl don't stop once you logoff
+$ tmux #or "tmux a -t [id]" if you have a session already. To detach ctrl+b->d at the end
+# activate python3 in virtual environment
+$ source ~/venv/bin/activate 
+$ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
+$ sh run_alexa_crawl.sh
+#you will find data at ./data
+```
