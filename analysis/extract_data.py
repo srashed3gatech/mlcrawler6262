@@ -141,8 +141,12 @@ def parse_data(day, data, blacklisted=False):
         d['page_size'] = len(result['full_html'])
 
         # Get number of words
-        body = page.select('body')[0]
-        d['num_words'] = len(body.get_text().replace('\n', '').split(' '))
+        body = page.select('body')
+
+        if body:
+            d['num_words'] = len(body[0].get_text().replace('\n', '').split(' '))
+        else:
+            d['num_words'] = 0
 
         # Get number of images
         d['num_images'] = len(page.select('img'))
@@ -255,7 +259,7 @@ def main():
     extract_data('15-04-17', n=1, m=1000)
 
     # Last 1000
-    extract_data('15-04-17', n=1, m=1000)
+    extract_data('15-04-17', n=999001, m=1000000)
 
     # Blacklisted
     #extract_blacklist_data('13-04-17')
