@@ -159,7 +159,7 @@ class LookupTable:
 
 class CrawlIndex:
     '''
-        Builds a rank index for a given day.
+        Builds a crawl index for a given day.
 
         Given a rank, stores the path and seekpos in the index.
     '''
@@ -178,13 +178,15 @@ class CrawlIndex:
 
             Returns: parsed JSON object if found, {} if not found.
         '''
-        path, seekpos = self.index.get(rank, [])
+        result = self.index.get(rank, [])
 
         if result:
+            path, seekpos = result
+
             with open(path, 'r') as f:
                 f.seek(seekpos)
                 line = f.readline().strip()
-                return json.parses(line)
+                return json.loads(line)
 
         return {}
 
@@ -319,7 +321,7 @@ def check_blacklist(day1, day2):
         print('Found: {0} at rank {1}'.format(url, rank))
 
 def main():
-    collect_metadata('15-04-17')
+    # collect_metadata('15-04-17')
 
     # Start from most recent data backwards
     # days = DAYS_CRAWLED[::-1]
