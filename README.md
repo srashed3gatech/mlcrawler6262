@@ -31,5 +31,5 @@
 
 <h2> How to use this code </h2>
 
-**Prerequisite:** Install provisioning script
-[./crawler/provision_main.sh]
+**Prerequisite:**: Install provisioning script
+```$ ./crawler/provision_main.sh```
