@@ -67,31 +67,18 @@ def load_blacklist(day):
             url = line.split(',')[0]
             blacklist.append(url)
 
-    # with open(BLACKLIST_FILE.format(day), 'r') as f:
-    #     for line in f:
-    #         url = line.split(',')[0]
-    #         l = blacklist.get(url[:5], [])
-    #         l.append(url)
-    #         blacklist[url[:5]] = l
-
     return blacklist
 
-def grab_ranks(day, ranks):
+def grab_ranks(day, ranks, crawl_index):
     '''
         Grab data samples for crawl for given day for specific ranks.
 
         Arguments
             - ranks: list of Alexa ranks (int)
+            - crawl_index: CrawlIndex instance
 
         Returns: list of parsed JSON objects for all given ranks.
     '''
-    crawl_index = CrawlIndex(day)
-    crawl_index.load()
-
-    if not crawl_index.loaded:
-        print('No crawl index available for {0}!'.format(day))
-        sys.exit(0)
-
     data = []
 
     for rank in ranks:
@@ -99,36 +86,6 @@ def grab_ranks(day, ranks):
         r = crawl_index.get(rank)
 
         # Skip any ranks that have not been crawled
-        if r:
-            data.append(r)
-
-    return data
-
-def grab_rank_range(day, n=1, m=1000):
-    '''
-        Grab data samples from crawl data for a given day from rank `n` to `m` (inclusive).
-
-        Arguments:
-            - n: start rank (inclusive)
-            - m: stop rank (inclusive)
-
-        Returns: list of parsed JSON objects for the entire rank range.
-    '''
-    if n > m:
-        return []
-
-    crawl_index = CrawlIndex(day)
-    crawl_index.load()
-
-    if not crawl_index.loaded:
-        print('No crawl index available for {0}!'.format(day))
-        sys.exit(0)
-
-    data = []
-
-    for rank in range(n, m+1):
-        r = crawl_index.get(rank)
-
         if r:
             data.append(r)
 
@@ -225,8 +182,26 @@ def parse_data(day, data, blacklisted=False):
     return parsed
 
 def extract_data(day, n=1, m=1000):
-    print('Grabbing data from rank {0} to rank {1}.'.format(n, m))
-    data = grab_rank_range(day, n, m)
+    # Load crawl index
+    crawl_index = CrawlIndex(day)
+    crawl_index.load()
+
+    if not crawl_index.loaded:
+        print('No crawl index available for {0}!'.format(day))
+        sys.exit(0)
+
+    max_rank = sorted(crawl_index.index.keys(), reverse=True)[0]
+
+    # Check if max rank exceeds max rank requested
+    if m > max_rank:
+        # Shift ranks down by difference with max
+        diff = m - max_rank
+        ranks = range(n-diff, m-diff+1)
+    else:
+        ranks = range(n, m+1)
+
+    print('Grabbing data from rank {0} to rank {1}.'.format(min(ranks), max(ranks)))
+    data = grab_ranks(day, ranks, crawl_index)
 
     print('Parsing the data...')
     parsed = parse_data(day, data)
@@ -243,13 +218,25 @@ def extract_blacklist_data(day):
     # Find which crawled URLs are in the blacklist for given day
     print('Performing blacklist lookups...')
     blacklist = load_blacklist(day)
+
+    # Load lookup table from disk
     lookup_table = LookupTable(day)
+    lookup_table.load()
+
     hits = blacklist_lookup(lookup_table, blacklist)
+
+    # Load crawl index
+    crawl_index = CrawlIndex(day)
+    crawl_index.load()
+
+    if not crawl_index.loaded:
+        print('No crawl index available for {0}!'.format(day))
+        sys.exit(0)
 
     # Extract the ranks and retrieve data
     ranks = [pair[1] for pair in hits]
     print('Grabbing data for {0} different ranks.'.format(len(ranks)))
-    data = grab_ranks(day, ranks)
+    data = grab_ranks(day, ranks, crawl_index)
 
     # Finally, parse the data into summarized form
     print('Parsing the data...')
@@ -268,7 +255,7 @@ def main():
     extract_data('15-04-17', n=1, m=1000)
 
     # Last 1000
-    extract_data('15-04-17', n=999001, m=1000000)
+    extract_data('15-04-17', n=1, m=1000)
 
     # Blacklisted
     #extract_blacklist_data('13-04-17')
