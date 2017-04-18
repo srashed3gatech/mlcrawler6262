@@ -1,10 +1,128 @@
-<h1> MLCrawler 6262 Project Repository </h1>
+# MLCrawler 6262 Project Repository
 
-**Analysis**
+## Prerequisites
+
+Run the provision script located at the root of this repo to install all dependencies:
+
+`$ ./provision.sh`
+
+The script does the following:
+
+1. Upgrade Ubuntu packages
+2. Install OpenJDK 8 and add JAVA_HOME to /etc/environment
+3. Installs Apache Solr 6.4.2 to `~/tools/solr` and adds Solr binaries to `$PATH`
+4. Install Git and clone this repo to `~/mlcrawler6262`
+5. Install `pip` and create a virtualenv under `~/.venv`
+6. Navigate to repo root directory and install dependencies from `requirements.txt`
+
+### Tuning the System
+
+Use local DNS cache & increase max open file limit:
+
+```## configuring dnsmasq for dns caching
+$ sudo vim /etc/NetworkManager/dnsmasq.d/cache
+#write following on the cache file
+cache-size=1000000
+#restart network manager to affect cache
+$ sudo restart network-manager
+#check if its working
+$ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
+
+#increasing max file open limit (ulimit -n) for crawler user
+$ sudo vim /etc/security/limits.conf
+*               soft    nofile          65535
+*               hard    nofile          65535
+#change this to effect ulimit without restart (then logout and login)
+$ sudo vim /etc/pam.d/common-session
+session     required    pam_limits.so
+```
+
+## Running the Crawler
+
+The file `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/run_alexa.py` runs the Scrapy crawler. You can change the variables `ALEXA_MAX`, `START_RANK`, and `CRAWL_NUM` to customize the crawl. The script splits the crawl into equal sized URL chunks according to `CRAWL_NUM` (as discussed in report).
+
+The following commands will start running the Scrapy crawler according to the variables listed above:
+
+```
+$ source ~/.venv/bin/activate
+$ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
+$ python run_alexa.py
+```
+
+The following are the directories of interest:
+
+- Crawl data is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`
+- Scrapy logs are stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs`
+- The top 1M `.zip` file for each crawl is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/urls`
+
+## Blacklist Parsing
+
+The blacklist parser script is located at `~/mlcrawler6262/crawler/blacklist/blacklist_parser`. The script spits out a CSV file with each row as `URL, type`. `type` refers to the type of malicious activity on the page, according to the blacklist. The filename is `blacklist-dd-mm-yy.csv`.
+
+The script can be run in two modes:
+
+1. With no arguments, the script retrieves the latest blacklists from 6 public sources, and combines them into a CSV.
+2. Pass it the blacklist text files -- as retrieved from the configured sources -- and it spits out a CSV.
+  - This is what's done in  `~/mlcrawler6262/resources/pbl_crawl.sh`.
+  - Note that the date format in the shell script is `yy-mm-dd`. You can change its format, but make sure to update the date string on line 158 of `blacklist_parser.py`!
+
+## Post-Crawl Analysis
+
+First, we need to create a Solr core called `search` that will store the summarized data:
+
+```
+# Start Solr on port 8983 (default)
+$ solr start
+$ solr create_core -c search
+```
+
+### Blacklist Diff Check
+
+Next, configure the `DAYS_CRAWLED` list on line 10 of `~/mlcrawler6262/analysis/blacklist_check.py`. It needs to reflect what data is actually available in the crawler's data directory (`~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`). Finally, make sure that the variables `RANK_DELTA` and `RANK_MAX` reflect the number of URLs per crawl data file and the number of total URLs crawled, respectively. In our case, they are set to 100,000 (10 files, 100k URLs each) and 1,000,000 (for Alexa top 1M).
+
+Now simply run `~/mlcrawler6262/analysis/blacklist_check.py` and check stdout for results. You can modify the function `main()` to write results to a file if you prefer. Note that the script will take a while to run the first time due to the function `collect_metadata`. This function is where the following takes place:
+
+1. Building the URL lookup table (stored in `~/mlcrawler6262/analysis/lookup`)
+2. Building the crawl index (stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/crawl_index`)
+3. Collecting crawl stats (stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/stats`)
+
+However, after the first run, the script should run finish quickly.
+
+### Data Extraction and Summarization
+
+The logic for this step of the analysis is all located in `~/mlcrawler6262/analysis/extract_data.py`. The script iterates over the `DAYS_CRAWLED` variable above and performs the following for each day crawled:
+
+1. Extracts and summarizes the data for the Alexa top 1000 URLs.
+2. Extracts and summarizes the data for the Alexa bottom 1000 URLs.
+3. Extracts and summarizes the data for all crawled URLs from the Alexa top 1M that are **also** in today's blacklist.
+
+The crawl index for the current day is used to provide (almost) random access to the raw crawl data (see `grab_ranks()`).
+
+The key function in this script is `parse_data()`. Be sure to refer to it to see what features are extracted from each crawled page.
+
+The script outputs 3 JSON files for each day: one for top 1000, one for bottom 1000, and one for the blacklisted URLs. The JSON files are dumped into the folder `~/mlcrawler6262/analysis/output`.
+
+## Search API
+
+Setting up the search API is quite easy. We just need to load the summarized data into Apache Solr.
+
+So navigate to `~/mlcrawler6262/analysis/output` and run the Apache Solr `post` utility. Use the command below to load all of the JSON files into the `search` core:
+
+`$ post -c search ~/mlcrawler6262/analysis/output/*.json`
+
+Now all the data is loaded into Solr for use by the visualization UI.
+
+## Visualization UI
+
+The visualization interface depends on Flask (and its dependencies) which are installed if you ran `provision.sh`.
+
+## Repo Structure
+
+### Analysis
  - blacklist_check.py : shows blacklist deferral that we also crawled in our dataset
  - extract_data.py : stats generation from raw crawled document
 
-**Crawler:**
+### Crawler
 - provision_main.sh : provision system necessary to run everything
 - blacklist
     - blacklist_parser.py : parse and generate single blacklist csv from collect source data with different formatting
@@ -24,67 +142,10 @@
     - data : data repo for crawled items
     - logs : scrapy run log
 
-**Resources:**
+### Resources
   - pbl_crawl.sh: cronbased daily blacklist fetch script
   - run_alexa_crawl.sh : cronbased daily alexa startup script
   - crawler_stat.py : generate crawl trend graph from stats generated by extract_data.py at alanysis folder
 
-**Machine Learning Proof of Concept**
-  - Readme.md specify how we ran our POC on crawled data to get Receiver Operating Characteristics
-
-<h2> How to use this code </h2>
-
-**Prerequisite:**: 
-Install provisioning script
-```$ ./crawler/provision_main.sh```
-
-**tuning the system** (use local DNS cache & increase max open file limit):
-```## configuring dnsmasq for dns caching
-$ sudo vim /etc/NetworkManager/dnsmasq.d/cache
-#write following on the cache file
-cache-size=1000000
-#restart network manager to affect cache
-$ sudo restart network-manager
-#check if its working
-$ sudo zgrep dnsmasq /var/log/syslog* | grep dnsmasq
-
-#increasing max file open limit (ulimit -n) for crawler user
-$ sudo vim /etc/security/limits.conf
-*               soft    nofile          65535
-*               hard    nofile          65535
-#change this to effect ulimit without restart (then logout and login)
-$ sudo vim /etc/pam.d/common-session
-session     required    pam_limits.so
-```
-
-**Running the crawler**
-```
-#use tmux so crawl don't stop once you logoff
-$ tmux #or "tmux a -t [id]" if you have a session already. To detach ctrl+b->d at the end
-# activate python3 in virtual environment
-$ source ~/venv/bin/activate 
-$ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
-$ sh run_alexa_crawl.sh
-#you will find data at ./data
-```
-**Post Analysis & Data Loading**
-```
-$ source ~/venv/bin/activate  #activate python 3.X
-# start SOLR on port 8983 (default)
-$ solr start
-# create 2 schema for crawl data and 
-bin/solr create_core -c search
-
-# Process Blacklist files to dump into single file (data.json) and upload to solr
-$ cd crawler/blacklist/
-$ sh blacklist_solr.sh
-
-# post analysis data generation
-$ cd analysis/
-# this will generate json files, ready to post into SOLR
-$ python extract_data.py
-# post data into solr
-$ SOLR_HOME/bin/post -c search output/YOUR_FILE_NAME.json
-```
-**Visualization System**
-TODO
+### ML Classifier for Blacklist URLs
+  - Check `README.md` under `/ml_poc` to see how we ran our POC on crawled data to get Receiver Operating Characteristics
