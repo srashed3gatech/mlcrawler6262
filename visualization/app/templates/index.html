@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<strong>Enter an url:</strong>
+<form action="/search" method="get">
+    <input type='text' size='10' id='searchText' name='searchText'>
+    <button type='submit' id='submit_search' name='submit_search'>Search</button>
+</form>
+<p></p>
+<strong>Select a date to update the chart:</strong>
+<form action="/index" method="get">
+    <input list='date_list' name='date'>
+    <datalist id='date_list'>
+        {% for date in listDate %}
+            <option value="{{date}}">
+        {% endfor %}
+    </datalist>
+    <button type="submit" name="submit_date">Submit</button>
+</form>
+
+<!--<style type="text/css">
+    .inline {
+        display: inline;
+    }
+    .link-button {
+        background: none;
+        border: none;
+        color: blue;
+         text-decoration: underline;
+         cursor: pointer;
+         font-size: 1em;
+         font-family: serif;
+    }
+    .link-button:focus {
+        outline: none;
+    }
+    .link-button:active {
+        color:red;
+    }
+</style>
+{% for date in listDate %}
+<form  action="/index" method="get" class="inline">
+  <input type="hidden" id="date_chart" name="date_chart">
+  <button type="submit" id="submit_date" name="submit_date" value="{{date}}" class="link-button">{{date[0][:10]}}</button>
+</form>
+{% endfor %}-->
+<!-- import plugin script -->
+<script src='static/Chart.min.js'></script>
+<h2>Blacklisted hit in Alexa top 1K</h2>
+<!-- bar chart canvas element -->
+<canvas id="chart" width="300" height="300"></canvas>
+<script>
+    var ctx = document.getElementById("chart");
+    var data = {
+        labels: [
+            {% for l in labels %}
+                "{{l}}",
+            {% endfor %}
+        ],
+        datasets: [
+            {
+                data: [
+                    {% for v in values %}
+                        {{v}},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    {% for c in colors %}
+                        "{{c}}",
+                    {% endfor %}
+                ]
+            }]
+    };
+    // draw pie chart
+    var myPieChart = new Chart(ctx,{
+        type: 'pie',
+        data: data,
+        options: {
+            responsive: false,
+            maintainAspectRatio: true,
+        }
+    })
+
+</script>
+{% endblock %}
+

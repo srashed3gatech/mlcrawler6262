@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<strong>Enter a date (MM/DD/YY):</strong>
+<form action="/top100/date" method="get">
+    <input type='text' size='10' id='searchDate' name='searchDate'>
+    <button type='submit' id='submitBtn' name='submitBtn'>Search</button>
+</form>
+{% endblock %}

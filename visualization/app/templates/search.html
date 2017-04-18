@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+<TABLE BORDER="1"> 
+	<CAPTION> Results </CAPTION>
+	<TR>
+		<TH>Title</TH>
+		<TH>URL</TH>
+		<TH>Alexa rank</TH>
+		<TH>Date</TH>
+		<TH># urls</TH>
+		<TH># words</TH>
+		<TH># images</TH>
+		<TH>Latency</TH>
+		<TH>Page size</TH>
+		<TH>Blacklist hits</TH>
+	</TR>
+	{% for element in data %}
+		<TR>
+			<TH>{{element["title"]}}</TH>
+			<TD>{{element["url"]}}</TD>
+			<TD>{{element["alexa_rank"]}}</TD>
+			<TD>{{element["date"]}}</TD>
+			<TD>{{element["num_urls"]}}</TD>
+			<TD>{{element["num_words"]}}</TD>
+			<TD>{{element["num_images"]}}</TD>
+			<TD>{{element["latency"]}}</TD>
+			<TD>{{element["page_size"]}}</TD>
+			<TD>{{element["blacklisted"]}}</TD>
+		</TR>
+	{% endfor %}
+</TABLE>
+
+{% endblock %}
