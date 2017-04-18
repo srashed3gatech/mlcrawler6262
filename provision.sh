@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-# Setup config files for user
-touch ~/.bash_aliases
-touch ~/.bash_profile
+## Tested on Ubuntu 14.04 LTS
 
 # Update Ubuntu packages
 sudo apt-get -y update
@@ -26,22 +24,23 @@ mv solr-6.4.2 solr
 echo 'export PATH="~/tools/solr/bin/:$PATH"' >> ~/.bash_profile
 source ~/.bash_profile
 
-# Clone repo locally
+# Clone this repo
 sudo apt-get -y install git
+cd ~
 git clone https://github.com/srashed3gatech/mlcrawler6262.git
 
-# Install pip and install dependencies (OpenSSL, etc.)
-cd mlcrawler6262/crawler/crawler-scrapy
+# Install pip and dependencies (OpenSSL, etc.)
 sudo apt-get -y install python3-pip libffi-dev libssl-dev libxml2-dev \
                         libxslt1-dev libjpeg8-dev zlib1g-dev
 
 # Setup a local virtual env for packages
 sudo pip3 install virtualenv
-cd ~ && virtualenv venv
-source venv/bin/activate
+mkdir ~/.venv
+cd ~/.venv && virtualenv main
 
-# Setup dependencies for Scrapy
-cd ~/tools/mlcrawler6262/crawler/crawler-scrapy
+# Install Python dependencies under virtualenv
+cd ~/mlcrawler6262
+source ~/.venv/main/bin/activate
 pip install -r requirements.txt
 
 echo 'Done!'
