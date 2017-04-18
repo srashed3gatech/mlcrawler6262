@@ -25,6 +25,7 @@ DAYS_CRAWLED = [
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data'
 
 # Number of Alexa URLs per data file
+# NOTE: need to configure this if crawling less or more URLs
 RANK_DELTA = 100000
 RANK_MAX = 1000000
 

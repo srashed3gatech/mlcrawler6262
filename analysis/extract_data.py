@@ -10,13 +10,10 @@ from datetime import datetime
 import pysolr
 from bs4 import BeautifulSoup
 
-from blacklist_check import parse_url, LookupTable, CrawlIndex, DAYS_CRAWLED
+from blacklist_check import parse_url, LookupTable, CrawlIndex, DAYS_CRAWLED, \
+                            RANK_MAX, RANK_DELTA
 
 CRAWL_DATA_DIR = '/home/crawler/mlcrawler6262/crawler/crawler-scrapy/alexatop/data/'
-
-# Number of Alexa URLs per data file
-RANK_DELTA = 100000
-RANK_MAX = 1000000
 
 # Data for blacklists by day
 BLACKLIST_DIR = '/home/crawler/mlcrawler6262/crawler/blacklist'
