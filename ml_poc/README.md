@@ -9,6 +9,11 @@ PROCESS:
 7. Decision Tree generation
 8. SVM Linear ROC generation
 
+Disclaimer: Portion of these codes collected from
+- Using-machine-learning-to-detect-maclicious-URLs (https://github.com/faizann24/Using-machine-learning-to-detect-malicious-URLs)
+- Receiver Operating Characteristic (http://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html)
+- Decision trees in python with scikit-learn and pandas (http://chrisstrelioff.ws/sandbox/2015/06/08/decision_trees_in_python_with_scikit_learn_and_pandas.html)
+
 
 ```python
 import pandas as pd
@@ -91,7 +96,7 @@ asndb_file = "/nethome/srashed3/scripts/ipasn_20170403.dat"
 asndb = pyasn.pyasn(asndb_file)
 ```
 
-    0.984136610657
+URL String Decency ML (LR) Accuracy:  0.984136610657
 
 
 
@@ -116,7 +121,7 @@ dfElement.shape
 
 
 
-    (511, 4)
+Blacklist Sample:  (511, 4)
 
 
 
@@ -138,7 +143,7 @@ dfElementWL.shape
 
 
 
-    (528, 4)
+Whitelist Sample:  (528, 4)
 
 
 
@@ -152,7 +157,7 @@ dfElement.shape
 
 
 
-    (1039, 4)
+Total Sample:  (1039, 4)
 
 
 
@@ -227,9 +232,7 @@ gc.collect()
 ```
 
 
-
-
-    4646
+Clearing Up the Memory:  4646
 
 
 
@@ -1129,13 +1132,9 @@ df_network_features
 
 
 
-
 ```python
-#Decision Tree
-```
+#Ref: http://chrisstrelioff.ws/sandbox/2015/06/08/decision_trees_in_python_with_scikit_learn_and_pandas.html
 
-
-```python
 def encode_target(df, target_column):
     """Add column to df with integers for the target.
 
@@ -1224,6 +1223,7 @@ dt.fit(X, y)
 
 ```python
 #Tree Visualization
+#Ref: http://chrisstrelioff.ws/sandbox/2015/06/08/decision_trees_in_python_with_scikit_learn_and_pandas.html
 import pygraphviz as pgv
 from IPython.display import Image
 
