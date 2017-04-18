@@ -49,11 +49,13 @@ $ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
 $ python run_alexa.py
 ```
 
-The following are the directories of interest:
+The following are directories of interest:
 
 - Crawl data is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`
-- Scrapy logs are stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs`
+- Scrapy output logs are stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs`
 - The top 1M `.zip` file for each crawl is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/urls`
+
+The crawler logic itself is located in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/alexatop/spiders/alexa_spider.py`. Some extra utility functions -- including a function that grabs the Alexa top 1M list -- is located in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/alexatop/util.py`.
 
 ## Blacklist Parsing
 
@@ -115,6 +117,15 @@ Now all the data is loaded into Solr for use by the visualization UI.
 ## Visualization UI
 
 The visualization interface depends on Flask (and its dependencies) which are installed if you ran `provision.sh`.
+
+To run the Flask web server, navigate to `~/mlcrawler6262/visualization` and run:
+
+```
+$ source ~/.venv/main/bin/activate
+$ python run.py
+```
+
+The server will start listening on `localhost:5000`.
 
 ## Repo Structure
 
