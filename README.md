@@ -15,6 +15,52 @@ The script does the following:
 5. Install `pip` and create a virtualenv under `~/.venv`
 6. Navigate to repo root directory and install dependencies from `requirements.txt`
 
+Note that the script requires `sudo` access to install packages.
+
+## Quick Start
+
+1. Source into Python virtualenv: `source ~/.venv/main/bin/activate`
+2. Navigate to crawler directory: `cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/`
+3. Modify the variables at the top of `run_alexa.py` to configure which parts of the Alexa top 1M to crawl (see next section)
+4. Run the crawler: `python run_alexa.py`
+  - Data stored in `data/`; logs in `logs/`
+5. Grab blacklists for the day and parse them: `cd ~/mlcrawler6262/crawler/blacklist && python blacklist_parser.py`
+  - Blacklists stored in `~/mlcrawler6262/crawler/blacklist`
+6. Once crawl is complete, navigate to `~/mlcrawler6262/analysis`
+7. In `blacklist_check.py`, modify `DAYS_CRAWLED` variable to reflect crawl data available
+  - List days in `dd-mm-yy` format
+8. Run `blacklist_check.py` to (1) build URL lookup tables and crawl indexes, (2) collect crawl stats, and (3) compute blacklist diffs
+  - Lookup tables under `lookup/`; stats and crawl indexes under data dir (`~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`)
+9. Run Apache Solr: `solr start`, then create a new core named "search": `solr create_core -c search`
+10. Summarize crawl data for all days: `cd ~/mlcrawler6262/analysis && python extract_data.py`
+  - Note that script is configured by default to extract top 1000, bottom 1000, and blacklist hits
+11. Store summarized data into the Solr core: `post -c search ~/mlcrawler6262/analysis/output/*.json`
+12. Access Solr through the web interface or query it at http://localhost:8983/solr.
+13. Start visualization web app: `cd ~/mlcrawler6262/visualization && python run.py`
+  - Server starts listening on http://localhost:5000
+
+The following sections go into each step in more detail.
+
+## Running the Crawler
+
+The file `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/run_alexa.py` runs the Scrapy crawler. You can change the variables `ALEXA_MAX`, `START_RANK`, and `CRAWL_NUM` to customize the crawl. The script splits the crawl into equal sized URL chunks according to `CRAWL_NUM` (as discussed in report).
+
+The following commands will start running the Scrapy crawler according to the variables listed above:
+
+```
+$ source ~/.venv/bin/activate
+$ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
+$ python run_alexa.py
+```
+
+The following are directories of interest:
+
+- Crawl data is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`
+- Scrapy output logs are stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs`
+- The top 1M `.zip` file for each crawl is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/urls`
+
+The crawler logic itself is located in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/alexatop/spiders/alexa_spider.py`. Some extra utility functions -- including a function that grabs the Alexa top 1M list -- is located in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/alexatop/util.py`.
+
 ### Tuning the System
 
 Use local DNS cache & increase max open file limit:
@@ -36,26 +82,6 @@ $ sudo vim /etc/security/limits.conf
 $ sudo vim /etc/pam.d/common-session
 session     required    pam_limits.so
 ```
-
-## Running the Crawler
-
-The file `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/run_alexa.py` runs the Scrapy crawler. You can change the variables `ALEXA_MAX`, `START_RANK`, and `CRAWL_NUM` to customize the crawl. The script splits the crawl into equal sized URL chunks according to `CRAWL_NUM` (as discussed in report).
-
-The following commands will start running the Scrapy crawler according to the variables listed above:
-
-```
-$ source ~/.venv/bin/activate
-$ cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/
-$ python run_alexa.py
-```
-
-The following are directories of interest:
-
-- Crawl data is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`
-- Scrapy output logs are stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/logs`
-- The top 1M `.zip` file for each crawl is stored in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/urls`
-
-The crawler logic itself is located in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/alexatop/spiders/alexa_spider.py`. Some extra utility functions -- including a function that grabs the Alexa top 1M list -- is located in `~/mlcrawler6262/crawler/crawler-scrapy/alexatop/alexatop/util.py`.
 
 ## Blacklist Parsing
 
