@@ -30,9 +30,9 @@ Note that the script requires `sudo` access to install packages.
   3. `python blacklist_check.py` to (1) build URL lookup tables and crawl indexes, (2) collect crawl stats, and (3) compute blacklist diffs
   4. Summarize crawl data for all days: `cd ~/mlcrawler6262/analysis && python extract_data.py`
 * Search API and visualization:
-  1. Run Apache Solr: `solr start`, then create a new core named "search": `solr create_core -c search`
-  2. Store summarized data into the Solr core: `post -c search ~/mlcrawler6262/analysis/output/*.json`
-  3. Access Solr through the web interface or query it at http://localhost:8983/solr.
+  1. Run Apache Solr: `solr start`
+  2. Store summarized data (found in `~/mlcrawler6262/analysis/output`) in Solr (see instructions below)
+  3. Access Solr through the web interface or query it at http://localhost:8983/solr
   4. Start visualization web app: `cd ~/mlcrawler6262/visualization && python run.py` (listening on http://localhost:5000)
 
 The following sections go into each step in more detail.
@@ -92,12 +92,11 @@ The script can be run in two modes:
 
 ## Post-Crawl Analysis
 
-First, we need to create a Solr core called `search` that will store the summarized data:
+First, we need to start Solr:
 
 ```
 # Start Solr on port 8983 (default)
 $ solr start
-$ solr create_core -c search
 ```
 
 ### Blacklist Diff Check
@@ -130,9 +129,27 @@ The script outputs 3 JSON files for each day: one for top 1000, one for bottom 1
 
 Setting up the search API is quite easy. We just need to load the summarized data into Apache Solr.
 
-So navigate to `~/mlcrawler6262/analysis/output` and run the Apache Solr `post` utility. Use the command below to load all of the JSON files into the `search` core:
+First, we create 3 cores for each of the data types:
 
-`$ post -c search ~/mlcrawler6262/analysis/output/*.json`
+```
+$ solr create_core -c top1000
+$ solr create_core -c bottom1000
+$ solr create_core -c blacklisted
+```
+
+Next, `cd ~/mlcrawler6262/analysis/output` and run the Apache Solr `post` utility. Use the commands below to load all of the JSON files into the required cores:
+
+```
+# Enable negative globbing
+$ shopt -s extglob
+
+# Post data to each core
+$ post -c top1000 *1-1000.json
+$ post -c blacklisted *-blacklisted.json
+
+# Match bottom 1000 results as inversion of rest
+$ post -c bottom1000 $(ls | grep -v -E '(1000|blacklisted).json')
+```
 
 Now all the data is loaded into Solr for use by the visualization UI.
 
