@@ -23,21 +23,15 @@ Note that the script requires `sudo` access to install packages.
 2. Navigate to crawler directory: `cd ~/mlcrawler6262/crawler/crawler-scrapy/alexatop/`
 3. Modify the variables at the top of `run_alexa.py` to configure which parts of the Alexa top 1M to crawl (see next section)
 4. Run the crawler: `python run_alexa.py`
-  - Data stored in `data/`; logs in `logs/`
 5. Grab blacklists for the day and parse them: `cd ~/mlcrawler6262/crawler/blacklist && python blacklist_parser.py`
-  - Blacklists stored in `~/mlcrawler6262/crawler/blacklist`
 6. Once crawl is complete, navigate to `~/mlcrawler6262/analysis`
 7. In `blacklist_check.py`, modify `DAYS_CRAWLED` variable to reflect crawl data available
-  - List days in `dd-mm-yy` format
 8. Run `blacklist_check.py` to (1) build URL lookup tables and crawl indexes, (2) collect crawl stats, and (3) compute blacklist diffs
-  - Lookup tables under `lookup/`; stats and crawl indexes under data dir (`~/mlcrawler6262/crawler/crawler-scrapy/alexatop/data`)
 9. Run Apache Solr: `solr start`, then create a new core named "search": `solr create_core -c search`
 10. Summarize crawl data for all days: `cd ~/mlcrawler6262/analysis && python extract_data.py`
-  - Note that script is configured by default to extract top 1000, bottom 1000, and blacklist hits
 11. Store summarized data into the Solr core: `post -c search ~/mlcrawler6262/analysis/output/*.json`
 12. Access Solr through the web interface or query it at http://localhost:8983/solr.
-13. Start visualization web app: `cd ~/mlcrawler6262/visualization && python run.py`
-  - Server starts listening on http://localhost:5000
+13. Start visualization web app: `cd ~/mlcrawler6262/visualization && python run.py` (listening on http://localhost:5000)
 
 The following sections go into each step in more detail.
 
