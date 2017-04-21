@@ -129,26 +129,17 @@ The script outputs 3 JSON files for each day: one for top 1000, one for bottom 1
 
 Setting up the search API is quite easy. We just need to load the summarized data into Apache Solr.
 
-First, we create 3 cores for each of the data types:
+First, we create a single core called `search` to store all of the data:
 
 ```
-$ solr create_core -c top1000
-$ solr create_core -c bottom1000
-$ solr create_core -c blacklisted
+$ solr create_core -c search
 ```
 
 Next, `cd ~/mlcrawler6262/analysis/output` and run the Apache Solr `post` utility. Use the commands below to load all of the JSON files into the required cores:
 
 ```
-# Enable negative globbing
-$ shopt -s extglob
-
-# Post data to each core
-$ post -c top1000 *1-1000.json
-$ post -c blacklisted *-blacklisted.json
-
-# Match bottom 1000 results as inversion of rest
-$ post -c bottom1000 $(ls | grep -v -E '(1000|blacklisted).json')
+# Post data to the core
+$ post -c search *.json
 ```
 
 Now all the data is loaded into Solr for use by the visualization UI.
